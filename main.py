@@ -58,7 +58,7 @@ def set_environment(args, tlogger):
         use_combiner = args.use_combiner,
     ) # about return_nodes, we use our default setting
     if args.pretrained is not None:
-        checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'))
+        checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'), weights_only=False)
         model.load_state_dict(checkpoint['model'])
         start_epoch = checkpoint['epoch']
     else:
@@ -75,7 +75,7 @@ def set_environment(args, tlogger):
     """
     
     if train_loader is None:
-        return train_loader, val_loader, model, None, None, None, None
+        return train_loader, val_loader, model, None, None, None, None, start_epoch
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
@@ -250,7 +250,7 @@ def main(args, tlogger):
             tlogger.print()
         else:
             from eval import eval_and_save
-            eval_and_save(args, model, val_loader)
+            eval_and_save(args, model, val_loader, tlogger)
             break
 
         eval_freq_schedule(args, epoch)
