@@ -170,3 +170,22 @@ results will show in terminal and been save in ./records/{project_name}/{exp_nam
 
 * This work was financially supported by the National Taiwan Normal University (NTNU) within the framework of the Higher Education Sprout Project by the Ministry of Education(MOE) in Taiwan, sponsored by Ministry of Science and Technology, Taiwan, R.O.C. under Grant no. MOST 110-
 2221-E-003-026, 110-2634-F-003 -007, and 110-2634-F-003 -006. In addition, we thank to National Center for Highperformance Computing (NCHC) for providing computational and storage resources.
+
+
+# Eye-Opening team
+
+### Install
+```zsh
+uv sync
+
+source .venv/bin/activate
+
+```
+- Follow the steps in section 1.2. Our pretrained model above:
+  - First, download from the sharepoint link in the readme and place it at pretrained/best.pt
+  - For datas — download cub200.zip from the sharepoint link in the readme and extract it to create the datas folder
+
+### How to eval
+```zsh
+python main.py --c ./configs/CUB200_SwinT_Pre.yaml
+```
