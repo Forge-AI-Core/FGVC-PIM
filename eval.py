@@ -300,7 +300,6 @@ def evaluate_cm(args, model, test_loader):
         writer = pd.ExcelWriter(args.save_dir + 'infer_result.xlsx')
         df = pd.DataFrame(results, columns=["id", "original_label", "predict_label", "goal"])
         df.to_excel(writer, index=False, sheet_name="Sheet1")
-        writer.save()
         writer.close()
 
         """ calculate accuracy """
@@ -319,7 +318,7 @@ def evaluate_cm(args, model, test_loader):
                     best_top1_name = name
 
         """ wirte xlsx"""
-        results_mat = np.mat(results)
+        results_mat = np.asmatrix(results)
         y_actual = results_mat[:, 1].transpose().tolist()[0]
         y_actual = list(map(int, y_actual))
         y_predict = results_mat[:, 2].transpose().tolist()[0]
@@ -373,7 +372,7 @@ def eval_and_cm(args, model, val_loader, tlogger):
 
 
 def plot_confusion_matrix(cm, label_names, save_name, title='Confusion Matrix acc = ', accuracy=0):
-    plt.rcParams['font.sans-serif'] = ['SimHei']
+    # plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.figure(figsize=(len(label_names) / 2, len(label_names) / 2), dpi=100)
     np.set_printoptions(precision=2)
     # print("cm:\n",cm)
