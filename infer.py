@@ -13,6 +13,7 @@ from models.builder import MODEL_GETTER
 from data.dataset import build_loader
 from utils.costom_logger import timeLogger
 from utils.config_utils import load_yaml, build_record_folder, get_args
+from utils.device_utils import get_device
 
 warnings.simplefilter("ignore")
 
@@ -20,7 +21,7 @@ warnings.simplefilter("ignore")
 def set_environment(args, tlogger):
     print("Setting Environment...")
 
-    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    args.device = get_device()
 
     ### = = = =  Dataset and Data Loader = = = =
     tlogger.print("Building Dataloader....")
@@ -43,7 +44,7 @@ def set_environment(args, tlogger):
     )  # about return_nodes, we use our default setting
     print(model)
 
-    checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'))
+    checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'), weights_only=False)
     model.load_state_dict(checkpoint['model'])
     start_epoch = checkpoint['epoch']
 

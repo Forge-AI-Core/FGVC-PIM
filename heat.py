@@ -96,7 +96,7 @@ if __name__ == "__main__":
     ) # about return_nodes, we use our default setting
 
     ### load model
-    checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'))
+    checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'), weights_only=False)
     model.load_state_dict(checkpoint['model'])
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(args.device)

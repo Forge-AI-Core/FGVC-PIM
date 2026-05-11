@@ -11,6 +11,7 @@ from utils.costom_logger import timeLogger
 from utils.config_utils import load_yaml, build_record_folder, get_args
 from utils.lr_schedule import cosine_decay, adjust_lr, get_lr
 from eval import evaluate, cal_train_metrics
+from utils.device_utils import get_device
 
 warnings.simplefilter("ignore")
 
@@ -26,6 +27,7 @@ def set_environment(args, tlogger):
     
     print("Setting Environment...")
 
+    # Default to CPU/CUDA (Will be refined after building loaders)
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
     ### = = = =  Dataset and Data Loader = = = =  
@@ -45,6 +47,12 @@ def set_environment(args, tlogger):
         print("    Validation Samples: {} (batch: {})".format(len(val_loader.dataset), len(val_loader)))
     else:
         print("    Validation Samples: 0 ~~~~~> [Only Training]")
+    
+    # Refine device: If evaluation only, allow MPS (get_device)
+    if train_loader is None:
+        args.device = get_device()
+        print(f"    Evaluation-only mode detected. Using device: {args.device}")
+
     tlogger.print()
 
     ### = = = =  Model = = = =  
