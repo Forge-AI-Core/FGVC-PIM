@@ -12,7 +12,7 @@ pretrained: ~
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
-max_epochs: 10
+max_epochs: 50
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
