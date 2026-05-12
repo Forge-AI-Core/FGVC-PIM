@@ -102,7 +102,7 @@ python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_im
 ### Examples:
 | Original Image | Attention Heatmap | Blended (Mix) |
 | :---: | :---: | :---: |
-| ![Original](./vis/001/rgb_img.jpg) | ![Heatmap](./vis/001/heatmap.jpg) | ![Mixed](./vis/001/mix.jpg) |
+| ![Original](./vis/001/rbg_img.jpg) | ![Heatmap](./vis/001/heatmap.jpg) | ![Mixed](./vis/001/mix.jpg) |
 
 ---
 
