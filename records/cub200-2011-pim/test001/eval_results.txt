@@ -1,0 +1,37 @@
+[Evaluation Results]
+Project: cub200-2011-pim, Experiment: test001
+Samples: 5794
+
+    layer1-top-1 91.802%
+    layer1-top-3 98.032%
+    layer2-top-1 91.854%
+    layer2-top-3 97.825%
+    layer3-top-1 92.095%
+    layer3-top-3 97.929%
+    layer4-top-1 92.285%
+    layer4-top-3 97.946%
+    select_layer1-top-1 91.501%
+    select_layer1-top-3 97.8%
+    select_layer2-top-1 91.436%
+    select_layer2-top-3 97.763%
+    select_layer3-top-1 91.625%
+    select_layer3-top-3 97.916%
+    select_layer4-top-1 92.198%
+    select_layer4-top-3 97.888%
+    drop_layer1-top-1 91.103%
+    drop_layer1-top-3 97.585%
+    drop_layer2-top-1 91.152%
+    drop_layer2-top-3 97.683%
+    drop_layer3-top-1 84.001%
+    drop_layer3-top-3 95.163%
+    drop_layer4-top-1 90.897%
+    drop_layer4-top-3 97.621%
+    combiner-top-1 92.147%
+    combiner-top-3 97.843%
+    highest-1 91.836%
+    highest-2 91.905%
+    highest-3 91.974%
+    highest-4 92.147%
+    highest-5 92.682%
+
+BEST_ACC: highest-5 92.682% 

@@ -1,0 +1,8 @@
+[Evaluation Results]
+Project: cub200-2011-pim, Experiment: test001
+Samples: 5794
+
+    combiner-top-1 92.13%
+    combiner-top-3 97.825%
+
+BEST_ACC: combiner-top-1 92.13% 

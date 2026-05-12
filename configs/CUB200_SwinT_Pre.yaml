@@ -3,7 +3,7 @@ exp_name: test001
 use_wandb: False
 wandb_entity: your_wandb_account
 train_root: ~
-val_root: ./datas/test/
+val_root: ./datas/CUB-200-2011/test/
 data_size: 384
 num_workers: 2
 batch_size: 8

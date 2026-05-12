@@ -53,6 +53,14 @@ source .venv/bin/activate
 *   [SwinT_CUB200_Pretrained](https://drive.google.com/drive/folders/15brdvEQZMWW2CJVEZ70Bx28ULaGwfaIr)
     *   Place the weight file at `pretrained/best.pt`.
 
+### 1.3. Data Preprocessing (FGVC-Aircraft)
+For the FGVC-Aircraft dataset, the downloaded images are initially mixed in a single directory. To use the original PyTorch `ImageDataset` logic (which expects images organized into class-specific subfolders), run the provided preprocessing script:
+
+```zsh
+python preprocess/prep_aircraft.py
+```
+*This script will read the CSV files and automatically organize the 10,000 images into `datas/FGVC-Aircraft/train/`, `val/`, and `test/` folders based on their aircraft class. After running this, the original `fgvc-aircraft-2013b` folder and CSV files can be safely deleted to save space.*
+
 ---
 
 ## 2. 🏋️ Training
@@ -115,6 +123,3 @@ You can integrate the PIM module into your own custom backbones:
 
 ---
 
-### Acknowledgment
-* Thanks to [timm](https://github.com/rwightman/pytorch-image-models) for the Pytorch implementation.
-* This work was supported by the Ministry of Education (MOE) and MOST, Taiwan. Thanks to NCHC for computational resources.
