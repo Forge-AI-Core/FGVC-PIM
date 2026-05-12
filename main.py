@@ -11,6 +11,7 @@ from utils.costom_logger import timeLogger
 from utils.config_utils import load_yaml, build_record_folder, get_args
 from utils.lr_schedule import cosine_decay, adjust_lr, get_lr
 from eval import evaluate, cal_train_metrics
+from sklearn.metrics import precision_recall_fscore_support
 from utils.device_utils import get_device
 
 warnings.simplefilter("ignore")
@@ -27,8 +28,8 @@ def set_environment(args, tlogger):
     
     print("Setting Environment...")
 
-    # Default to CPU/CUDA (Will be refined after building loaders)
-    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # Assign optimal device globally (supports CUDA, MPS, CPU)
+    args.device = get_device()
     
     ### = = = =  Dataset and Data Loader = = = =  
     tlogger.print("Building Dataloader....")
@@ -48,10 +49,7 @@ def set_environment(args, tlogger):
     else:
         print("    Validation Samples: 0 ~~~~~> [Only Training]")
     
-    # Refine device: If evaluation only, allow MPS (get_device)
-    if train_loader is None:
-        args.device = get_device()
-        print(f"    Evaluation-only mode detected. Using device: {args.device}")
+    print(f"    Using device: {args.device}")
 
     tlogger.print()
 
@@ -99,22 +97,27 @@ def set_environment(args, tlogger):
 
     schedule = cosine_decay(args, len(train_loader))
 
-    if args.use_amp:
+    if args.use_amp and args.device.type == "cuda":
         scaler = torch.cuda.amp.GradScaler()
         amp_context = torch.cuda.amp.autocast
     else:
         scaler = None
         amp_context = contextlib.nullcontext
+        if args.use_amp:
+            print("    [Warning] AMP is only supported on CUDA. Disabling AMP.")
+            args.use_amp = False
 
     return train_loader, val_loader, model, optimizer, schedule, scaler, amp_context, start_epoch
 
 
 def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader):
-    
+
     optimizer.zero_grad()
     total_batchs = len(train_loader) # just for log
     show_progress = [x/10 for x in range(11)] # just for log
     progress_i = 0
+    all_train_preds = []
+    all_train_labels = []
     for batch_id, (ids, datas, labels) in enumerate(train_loader):
         model.train()
         """ = = = = adjust learning rate = = = = """
@@ -190,6 +193,11 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     if args.lambda_c != 0:
                         loss_c = nn.CrossEntropyLoss()(outs[name], labels)
                         loss += args.lambda_c * loss_c
+                    # combiner 기준 예측값 누적 (Precision/Recall/F1용)
+                    with torch.no_grad():
+                        preds = torch.argmax(outs[name], dim=1).cpu().tolist()
+                        all_train_preds.extend(preds)
+                        all_train_labels.extend(labels.cpu().tolist())
 
                 elif "ori_out" in name:
                     loss_ori = F.cross_entropy(outs[name], labels)
@@ -227,6 +235,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
             print(".."+str(int(show_progress[progress_i] * 100)) + "%", end='', flush=True)
             progress_i += 1
 
+    return all_train_preds, all_train_labels
+
 
 def main(args, tlogger):
     """
@@ -254,7 +264,19 @@ def main(args, tlogger):
         """
         if train_loader is not None:
             tlogger.print("Start Training {} Epoch".format(epoch+1))
-            train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
+            all_train_preds, all_train_labels = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
+            # Train 에포크 끝 - combiner 기준 Precision/Recall/F1 계산
+            if len(all_train_preds) > 0:
+                train_prec, train_rec, train_f1, _ = precision_recall_fscore_support(
+                    all_train_labels, all_train_preds, average='macro', zero_division=0)
+                train_combiner_acc = round(
+                    100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
+                tlogger.print("....Train | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                    max(train_combiner_acc, best_acc),
+                    train_combiner_acc,
+                    round(train_prec * 100, 3),
+                    round(train_rec * 100, 3),
+                    round(train_f1 * 100, 3)))
             tlogger.print()
         else:
             from eval import eval_and_save
@@ -275,15 +297,20 @@ def main(args, tlogger):
             if val_loader is not None:
                 tlogger.print("Start Evaluating {} Epoch".format(epoch + 1))
                 acc, eval_name, accs = evaluate(args, model, val_loader)
-                tlogger.print("....BEST_ACC: {}% ({}%)".format(max(acc, best_acc), acc))
+                prec = accs.get("Precision", 0)
+                rec = accs.get("Recall", 0)
+                f1 = accs.get("F1-Score", 0)
+                combiner_acc = accs.get("combiner-top-1", acc)
+                tlogger.print("....Eval | ACC: {}% ({}%) | Highest-5 ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                    max(combiner_acc, best_acc), combiner_acc, acc, prec, rec, f1))
                 tlogger.print()
 
             if args.use_wandb:
                 wandb.log(accs)
 
-            if acc > best_acc:
-                best_acc = acc
-                best_eval_name = eval_name
+            if combiner_acc > best_acc:
+                best_acc = combiner_acc
+                best_eval_name = "combiner-top-1"
                 torch.save(checkpoint, args.save_dir + "backup/best.pt")
             if args.use_wandb:
                 wandb.run.summary["best_acc"] = best_acc

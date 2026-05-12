@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from typing import Union
 import pandas as pd
 import os
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
 import matplotlib.pyplot as plt
 
 
@@ -181,6 +181,8 @@ def evaluate(args, model, test_loader):
     model.eval()
     corrects = {}
     total_samples = {}
+    all_preds = []
+    all_labels = []
 
     total_batchs = len(test_loader) # just for log
     show_progress = [x/10 for x in range(11)] # just for log
@@ -189,7 +191,7 @@ def evaluate(args, model, test_loader):
     with torch.no_grad():
         """ accumulate """
         for batch_id, (ids, datas, labels) in enumerate(test_loader):
-            
+
             score_names = []
             scores = []
             datas = datas.to(args.device)
@@ -200,7 +202,7 @@ def evaluate(args, model, test_loader):
                 for i in range(1, 5):
                     this_name = "layer" + str(i)
                     _cal_evalute_metric(corrects, total_samples, outs[this_name].mean(1), labels, this_name, scores, score_names)
-            
+
             ### for research
             if args.use_selection:
                 for name in outs:
@@ -211,7 +213,7 @@ def evaluate(args, model, test_loader):
                     logit = outs[name].view(-1, args.num_classes)
                     labels_1 = labels.unsqueeze(1).repeat(1, S).flatten(0)
                     _cal_evalute_metric(corrects, total_samples, logit, labels_1, this_name)
-                
+
                 for name in outs:
                     if "drop_" not in name:
                         continue
@@ -224,22 +226,24 @@ def evaluate(args, model, test_loader):
             if args.use_combiner:
                 this_name = "combiner"
                 _cal_evalute_metric(corrects, total_samples, outs["comb_outs"], labels, this_name, scores, score_names)
+                # combiner 기준 Precision/Recall/F1을 위해 누적
+                preds = torch.argmax(outs["comb_outs"], dim=1).cpu().tolist()
+                all_preds.extend(preds)
+                all_labels.extend(labels.cpu().tolist())
 
             if "ori_out" in outs:
                 this_name = "original"
                 _cal_evalute_metric(corrects, total_samples, outs["ori_out"], labels, this_name)
-        
+
             _average_top_k_result(corrects, total_samples, scores, labels)
 
             eval_progress = (batch_id + 1) / total_batchs
-            
+
             if eval_progress > show_progress[progress_i]:
                 print(".."+str(int(show_progress[progress_i]*100))+"%", end='', flush=True)
                 progress_i += 1
 
         """ calculate accuracy """
-        # total_samples = len(test_loader.dataset)
-        
         best_top1 = 0.0
         best_top1_name = ""
         eval_acces = {}
@@ -252,6 +256,14 @@ def evaluate(args, model, test_loader):
                 if acc >= best_top1:
                     best_top1 = acc
                     best_top1_name = name
+
+        """ calculate Precision / Recall / F1 (combiner 기준) """
+        if len(all_preds) > 0:
+            prec, rec, f1, _ = precision_recall_fscore_support(
+                all_labels, all_preds, average='macro', zero_division=0)
+            eval_acces["Precision"] = round(prec * 100, 3)
+            eval_acces["Recall"] = round(rec * 100, 3)
+            eval_acces["F1-Score"] = round(f1 * 100, 3)
 
     return best_top1, best_top1_name, eval_acces
 

@@ -5,14 +5,14 @@ wandb_entity: your_wandb_account
 train_root: ./datas/FGVC-Aircraft/train/
 val_root: ./datas/FGVC-Aircraft/test/
 data_size: 384
-num_workers: 4
-batch_size: 16
+num_workers: 0
+batch_size: 4
 model_name: swin-t
 pretrained: ~
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
-max_epochs: 10
+max_epochs: 2
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
@@ -29,6 +29,6 @@ lambda_b: 0.5
 lambda_s: 0.0
 lambda_n: 5.0
 lambda_c: 1.0
-update_freq: 2
+update_freq: 8
 log_freq: 100
 eval_freq: 10
