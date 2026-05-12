@@ -251,7 +251,7 @@ def main(args, tlogger):
 
     # 그래프용 지표 누적
     train_history = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": []}
-    eval_history  = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": [], "highest5": []}
+    eval_history  = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": []}
 
     if args.use_wandb:
         wandb.init(entity=args.wandb_entity,
@@ -311,15 +311,14 @@ def main(args, tlogger):
                 rec = accs.get("Recall", 0)
                 f1 = accs.get("F1-Score", 0)
                 combiner_acc = accs.get("combiner-top-1", acc)
-                tlogger.print("....Eval | ACC: {}% ({}%) | Highest-5 ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
-                    max(combiner_acc, best_acc), combiner_acc, acc, prec, rec, f1))
+                tlogger.print("....Eval | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                    max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
                 tlogger.print()
                 eval_history["epoch"].append(epoch + 1)
                 eval_history["acc"].append(combiner_acc)
                 eval_history["precision"].append(prec)
                 eval_history["recall"].append(rec)
                 eval_history["f1"].append(f1)
-                eval_history["highest5"].append(acc)
 
             if args.use_wandb:
                 wandb.log(accs)
@@ -358,7 +357,6 @@ def save_metrics_plots(args, train_history, eval_history):
     if len(eval_history["epoch"]) > 0:
         fig, ax = plt.subplots(figsize=(12, 6))
         ax.plot(eval_history["epoch"], eval_history["acc"],       marker='o', label='ACC (combiner-top-1)', linewidth=2)
-        ax.plot(eval_history["epoch"], eval_history["highest5"],  marker='*', label='Highest-5 ACC', linewidth=2)
         ax.plot(eval_history["epoch"], eval_history["precision"], marker='s', label='Precision', linewidth=2, linestyle='--')
         ax.plot(eval_history["epoch"], eval_history["recall"],    marker='^', label='Recall', linewidth=2, linestyle='--')
         ax.plot(eval_history["epoch"], eval_history["f1"],        marker='D', label='F1-Score', linewidth=2, linestyle=':')

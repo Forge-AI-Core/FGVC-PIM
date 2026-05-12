@@ -201,31 +201,11 @@ def evaluate(args, model, test_loader):
             if args.use_fpn:
                 for i in range(1, 5):
                     this_name = "layer" + str(i)
-                    _cal_evalute_metric(corrects, total_samples, outs[this_name].mean(1), labels, this_name, scores, score_names)
-
-            ### for research
-            if args.use_selection:
-                for name in outs:
-                    if "select_" not in name:
-                        continue
-                    this_name = name
-                    S = outs[name].size(1)
-                    logit = outs[name].view(-1, args.num_classes)
-                    labels_1 = labels.unsqueeze(1).repeat(1, S).flatten(0)
-                    _cal_evalute_metric(corrects, total_samples, logit, labels_1, this_name)
-
-                for name in outs:
-                    if "drop_" not in name:
-                        continue
-                    this_name = name
-                    S = outs[name].size(1)
-                    logit = outs[name].view(-1, args.num_classes)
-                    labels_0 = labels.unsqueeze(1).repeat(1, S).flatten(0)
-                    _cal_evalute_metric(corrects, total_samples, logit, labels_0, this_name)
+                    _cal_evalute_metric(corrects, total_samples, outs[this_name].mean(1), labels, this_name)
 
             if args.use_combiner:
                 this_name = "combiner"
-                _cal_evalute_metric(corrects, total_samples, outs["comb_outs"], labels, this_name, scores, score_names)
+                _cal_evalute_metric(corrects, total_samples, outs["comb_outs"], labels, this_name)
                 # combiner 기준 Precision/Recall/F1을 위해 누적
                 preds = torch.argmax(outs["comb_outs"], dim=1).cpu().tolist()
                 all_preds.extend(preds)
@@ -234,8 +214,6 @@ def evaluate(args, model, test_loader):
             if "ori_out" in outs:
                 this_name = "original"
                 _cal_evalute_metric(corrects, total_samples, outs["ori_out"], labels, this_name)
-
-            _average_top_k_result(corrects, total_samples, scores, labels)
 
             eval_progress = (batch_id + 1) / total_batchs
 

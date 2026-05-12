@@ -115,6 +115,46 @@ python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_im
 
 ---
 
+## 5. 📈 Training Output & Metrics
+
+After training finishes, the following files are saved to `./records/{project_name}/{exp_name}/`:
+
+| File | Description |
+| :--- | :--- |
+| `backup/best.pt` | Best checkpoint (saved based on **combiner-top-1** accuracy) |
+| `backup/last.pt` | Latest epoch checkpoint |
+| `eval_results.txt` | Evaluation summary (accuracy, precision, recall, F1) |
+| `train_metrics.png` | Per-epoch train ACC / Precision / Recall / F1-Score graph |
+| `eval_metrics.png` | Per-epoch eval ACC / Precision / Recall / F1-Score graph |
+
+### Terminal Log Format
+```
+Train | ACC: 85.123% (85.123%) | Precision: 84.900% | Recall: 85.100% | F1-Score: 85.000%
+Eval  | ACC: 88.456% (88.456%) | Precision: 88.200% | Recall: 88.400% | F1-Score: 88.300%
+```
+- **ACC (left)**: max(current epoch ACC, historical best ACC)
+- **ACC (right, in parentheses)**: current epoch combiner-top-1 accuracy
+- All metrics: macro-averaged via sklearn
+
+---
+
+## 🔧 Modifications from Original
+
+The following changes have been made from the [original repository](https://github.com/chou141253/FGVC-PIM):
+
+| Area | Change |
+| :--- | :--- |
+| **best.pt criterion** | Changed from `highest-5` (average of all layer outputs) to `combiner-top-1` (single forward pass — the actual deployable metric) |
+| **Eval metrics** | Added macro Precision / Recall / F1-Score via `sklearn` (combiner output) |
+| **Train metrics** | Added per-epoch macro Precision / Recall / F1-Score accumulated across batches |
+| **Metric graphs** | `save_metrics_plots()` saves `train_metrics.png` and `eval_metrics.png` at end of training |
+| **eval.py — `select_` / `drop_` 제거** | `evaluate()` 내부에서 `select_*` / `drop_*` 출력에 대한 top-k 정확도 계산 블록 삭제. 원래 S=2048 토큰 기준으로 배치당 32,768개 샘플을 처리하던 병목이었음. |
+| **eval.py — `_average_top_k_result` 제거** | `evaluate()` 내부에서 `_average_top_k_result` 호출 제거 (Python 루프 병목). `highest-1` ~ `highest-5` 지표는 더 이상 계산하지 않음. 터미널 출력 및 그래프에서도 `Highest-5 ACC` 항목 제거. |
+| **Multi-device support** | `get_device()` util added — supports CUDA, Apple MPS, and CPU automatically |
+| **FGVC-Aircraft config** | `configs/Aircraft_SwinT.yaml` added for 100-class aircraft fine-tuning |
+
+---
+
 ## 🛠️ Custom Model Support
 
 You can integrate the PIM module into your own custom backbones:
