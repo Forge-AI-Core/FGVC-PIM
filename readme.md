@@ -79,6 +79,7 @@ python main.py --c ./configs/CUB200_SwinT.yaml
 ### Option A: Quick Accuracy Check (via `main.py`)
 ```zsh
 python main.py --c ./configs/CUB200_SwinT_Pre.yaml
+time TORCH_HOME=./.cache python main.py --c ./configs/Aircraft_SwinT.yaml
 ```
 *   **Condition**: Set `train_root: ~` in your YAML.
 *   **Output**: `eval_results.txt`.
