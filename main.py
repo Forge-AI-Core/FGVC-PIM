@@ -289,7 +289,7 @@ def main(args, tlogger):
         checkpoint = {"model": model_to_save.state_dict(), "optimizer": optimizer.state_dict(), "epoch":epoch}
         torch.save(checkpoint, args.save_dir + "backup/last.pt")
 
-        if epoch == 0 or (epoch + 1) % args.eval_freq == 0:
+        if (epoch + 1) % args.eval_freq == 0:
             """
             Evaluation
             """

@@ -5,7 +5,7 @@ wandb_entity: your_wandb_account
 train_root: ./datas/FGVC-Aircraft/train/
 val_root: ./datas/FGVC-Aircraft/test/
 data_size: 384
-num_workers: 4
+num_workers: 6
 batch_size: 16
 model_name: swin-t
 pretrained: ~
