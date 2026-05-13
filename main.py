@@ -276,8 +276,7 @@ def main(args, tlogger):
                     all_train_labels, all_train_preds, average='macro', zero_division=0)
                 train_combiner_acc = round(
                     100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
-                tlogger.print("....Train | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
-                    max(train_combiner_acc, best_acc),
+                tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
                     train_combiner_acc,
                     round(train_prec * 100, 3),
                     round(train_rec * 100, 3),

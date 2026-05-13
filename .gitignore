@@ -29,7 +29,8 @@ cub200/
 *.zip
 *.tar
 *.tar.gz
-
+./records/FGVC-Aircraft-PIM/Aircraft-SwinT-001/backup/
+./records/cub200-2011-pim/test001/backup/
 # Logs
 *.log
 wandb/
