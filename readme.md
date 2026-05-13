@@ -48,11 +48,13 @@ source .venv/bin/activate
 ### 1.2. Datasets & Pretrained Models
 *   **CUB-200-2011**: [Download Link](https://drive.google.com/drive/folders/15brdvEQZMWW2CJVEZ70Bx28ULaGwfaIr)
 *   **FGVC-Aircraft**: [Download Link](https://drive.google.com/drive/folders/1iKTP2H-Tb8sanzqHcEKPhYe3YtfcjbN6)
-*   **NA-Birds**: [Download Link](https://dl.allaboutbirds.org/nabirds)
+*   **Stanford Cars**: [Download Link](https://drive.google.com/drive/folders/1fnB_L1fnx3kTugqt2DkqdeX06K2XZCIu)
+
 
 #### 📥 Download Pretrained Weights
 *   **CUB-200-2011 Pretrained**: Place the weight file at `pretrained/cub200/best.pt`.
 *   **FGVC-Aircraft Pretrained**: Place the weight file at `pretrained/aircraft/best.pt`.
+*   **Stanford Cars Pretrained**: Place the weight file at `pretrained/cars/best.pt`.
 
 ### 1.3. Data Preprocessing (FGVC-Aircraft)
 Unlike CUB-200, the raw FGVC-Aircraft dataset packages all 10,000 images into a single flat folder alongside CSV annotation files. To make it compatible with PyTorch's standard `ImageFolder` structure (class-specific subfolders), follow these steps:
@@ -64,6 +66,16 @@ python preprocess/prep_aircraft.py
 ```
 *This script automatically splits and organizes the images into `./datas/FGVC-Aircraft/train/`, `val/`, and `test/` subdirectories based on their 100 variant classes. Once completed successfully, you can safely delete the raw `fgvc-aircraft-2013b` folder to free up storage space.*
 
+### 1.4. Data Preprocessing (Stanford Cars)
+The raw Stanford Cars dataset distributes images in flat directories (`cars_train` and `cars_test`) and requires parsing MATLAB `.mat` structure arrays to map images to their 196 specific model variants. To properly format the directories:
+
+1. Ensure the dataset folder resides at `./datas/Stanford-Cars/` containing `cars_train/`, `cars_test/`, and `devkit/`.
+2. Run the automated matrix parsing and folder formatting script:
+```zsh
+python preprocess/prep_cars.py
+```
+*This script copies the corrected test annotations containing ground truth labels, extracts bounding box metadata, and seamlessly arranges images into class subdirectories (`001` to `196`) under `./datas/Stanford-Cars/train/` and `test/`.*
+
 ---
 
 ## 2. 🏋️ Training
@@ -74,6 +86,9 @@ python main.py --c ./configs/CUB200_SwinT.yaml
 
 # FGVC-Aircraft Training
 python main.py --c ./configs/Aircraft_SwinT.yaml
+
+# Stanford Cars Training
+python main.py --c ./configs/Cars_SwinT.yaml
 ```
 - **Configuration**: Modify YAML files in `./configs/`.
 - **Checkpointing**: Models are saved in `./records/{project_name}/{exp_name}/backup/`.
@@ -90,6 +105,9 @@ python main.py --c ./configs/CUB200_SwinT_Pre.yaml
 
 # FGVC-Aircraft
 python main.py --c ./configs/Aircraft_SwinT_Pre.yaml
+
+# Stanford Cars
+python main.py --c ./configs/Cars_SwinT_Pre.yaml
 ```
 *   **Condition**: Set `train_root: ~` in your YAML.
 *   **Output**: `eval_results.txt`.
@@ -101,6 +119,9 @@ python infer.py --c ./configs/CUB200_SwinT_Pre.yaml
 
 # FGVC-Aircraft Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Aircraft_SwinT_Pre.yaml
+
+# Stanford Cars Detailed Scoring & Excel/Confusion Matrix
+python infer.py --c ./configs/Cars_SwinT_Pre.yaml
 ```
 *   **Outputs**:
     1.  `infer_results.txt`: Summary of metrics.
@@ -124,6 +145,9 @@ python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_im
 
 # FGVC-Aircraft Heatmap
 python heat.py --c ./configs/Aircraft_SwinT_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
+
+# Stanford Cars Heatmap
+python heat.py --c ./configs/Cars_SwinT_Pre.yaml --img ./vis/car_sample.jpg --save_img ./vis/car_out/
 ```
 
 ### Examples:
