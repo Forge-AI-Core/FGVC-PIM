@@ -1,11 +1,11 @@
-project_name: CUB200-T2
-exp_name: T3000
-use_wandb: True
-wandb_entity: poyung
-train_root: ../datas/CUB-200-2011/train/
-val_root: ../datas/CUB-200-2011/test/
+project_name: FGVC-Aircraft-PIM
+exp_name: Aircraft-SwinT-001
+use_wandb: False
+wandb_entity: your_wandb_account
+train_root: ./datas/FGVC-Aircraft/train/
+val_root: ./datas/FGVC-Aircraft/test/
 data_size: 384
-num_workers: 2
+num_workers: 6
 batch_size: 16
 model_name: swin-t
 pretrained: ~
@@ -18,7 +18,7 @@ use_amp: True
 use_fpn: True
 fpn_size: 1536
 use_selection: True
-num_classes: 200
+num_classes: 100
 num_selects: 
   layer1: 2048
   layer2: 512
