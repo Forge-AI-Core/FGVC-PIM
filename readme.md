@@ -15,18 +15,17 @@ We propose a novel plug-in module that can be integrated into common backbones (
 
 # 👁️ Eye-Opening Project
 
-## 🚀 Phase 1 Objective: Sequential Transfer Learning
-The primary goal of Phase 1 is to verify the generalizability and knowledge transfer capability of the PIM model across diverse fine-grained domains.
+## 🚀 Objective: Domain-Specific Fine-Grained Recognition
+The primary goal of this project is to verify the generalizability and feature extraction capabilities of the PIM model across diverse fine-grained domains by independently fine-tuning from a flagship pre-trained backbone.
 
-**Transfer Learning Pipeline:**
+**Independent Fine-Tuning Pipeline:**
 ```text
-ImageNet Pretraining (1,000 classes)
-        ↓
-CUB-200 Fine-tuning (200 classes) 
-        ↓ [Checkpoint: CUB Pretrained Model]
-Aircraft Fine-tuning (100 classes)
-        ↓ [Checkpoint: Aircraft Pretrained Model]
-Stanford Cars Fine-tuning (196 classes)
+          ImageNet-22K Pretraining (Swin-Large Backbone)
+            ↙                   ↓                   ↘
+    CUB-200-2011          FGVC-Aircraft          Stanford Cars
+   (200 classes)          (100 classes)          (196 classes)
+         ↓                      ↓                      ↓
+   [best.pt eval]         [best.pt eval]         [best.pt eval]
 ```
 
 ---
