@@ -82,13 +82,13 @@ python preprocess/prep_cars.py
 If you want to train the models from scratch:
 ```zsh
 # CUB-200-2011 Training
-python main.py --c ./configs/CUB200_SwinT.yaml
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT.yaml
 
 # FGVC-Aircraft Training
-python main.py --c ./configs/Aircraft_SwinT.yaml
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT.yaml
 
 # Stanford Cars Training
-python main.py --c ./configs/Cars_SwinT.yaml
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT.yaml
 ```
 - **Configuration**: Modify YAML files in `./configs/`.
 - **Checkpointing**: Models are saved in `./records/{project_name}/{exp_name}/backup/`.

@@ -29,6 +29,6 @@ lambda_b: 0.5
 lambda_s: 0.0
 lambda_n: 5.0
 lambda_c: 1.0
-update_freq: 2
+update_freq: 1
 log_freq: 100
 eval_freq: 10
