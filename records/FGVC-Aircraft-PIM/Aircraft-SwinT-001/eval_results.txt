@@ -2,18 +2,18 @@
 Project: FGVC-Aircraft-PIM, Experiment: Aircraft-SwinT-001
 Samples: 3333
 
-    layer1-top-1 81.188%
-    layer1-top-3 95.86%
-    layer2-top-1 81.668%
-    layer2-top-3 95.71%
-    layer3-top-1 84.218%
-    layer3-top-3 95.92%
-    layer4-top-1 84.308%
-    layer4-top-3 95.68%
-    combiner-top-1 85.449%
-    combiner-top-3 95.23%
-    Precision 85.737%
-    Recall 85.446%
-    F1-Score 85.355%
+    layer1-top-1 87.939%
+    layer1-top-3 96.85%
+    layer2-top-1 88.119%
+    layer2-top-3 96.73%
+    layer3-top-1 88.029%
+    layer3-top-3 96.7%
+    layer4-top-1 87.429%
+    layer4-top-3 96.46%
+    combiner-top-1 87.849%
+    combiner-top-3 96.01%
+    Precision 88.464%
+    Recall 87.835%
+    F1-Score 87.803%
 
-BEST_ACC: combiner-top-1 85.449% 
+BEST_ACC: layer2-top-1 88.119% 
