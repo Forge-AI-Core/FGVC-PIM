@@ -1,0 +1,19 @@
+[Evaluation Results]
+Project: StanfordCars-PIM, Experiment: Cars-SwinT-eval
+Samples: 8041
+
+    layer1-top-1 88.285%
+    layer1-top-3 97.699%
+    layer2-top-1 88.795%
+    layer2-top-3 97.849%
+    layer3-top-1 91.792%
+    layer3-top-3 98.707%
+    layer4-top-1 92.178%
+    layer4-top-3 98.62%
+    combiner-top-1 92.986%
+    combiner-top-3 98.93%
+    Precision 93.09%
+    Recall 92.902%
+    F1-Score 92.901%
+
+BEST_ACC: combiner-top-1 92.986% 

@@ -1,9 +1,9 @@
-project_name: FGVC-Aircraft-PIM
-exp_name: Aircraft-SwinT-001
+project_name: StanfordCars-PIM
+exp_name: Cars-SwinT-001
 use_wandb: False
 wandb_entity: your_wandb_account
-train_root: ./datas/FGVC-Aircraft/train/
-val_root: ./datas/FGVC-Aircraft/test/
+train_root: ./datas/Stanford-Cars/train/
+val_root: ./datas/Stanford-Cars/test/
 data_size: 384
 num_workers: 6
 batch_size: 16
@@ -12,13 +12,13 @@ pretrained: ~
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
-max_epochs: 50
+max_epochs: 20
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
 fpn_size: 1536
 use_selection: True
-num_classes: 100
+num_classes: 196
 num_selects: 
   layer1: 2048
   layer2: 512
