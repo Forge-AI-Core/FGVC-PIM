@@ -52,7 +52,8 @@ source .venv/bin/activate
 *   **Stanford Cars**: [Download Link](https://drive.google.com/drive/folders/1fnB_L1fnx3kTugqt2DkqdeX06K2XZCIu)
 
 #### 📥 Download Pretrained Weights
-*   **CUB-200-2011 Pretrained**: Place the weight file at `pretrained/cub200/best.pt`.
+*   **CUB-200-2011 Pretrained (Swin-T)**: Place the weight file at `pretrained/cub200/best.pt`.
+*   **CUB-200-2011 Pretrained (ConvNeXt-Tiny)**: Place the weight file at `pretrained/cub200/convN/best.pt`.
 *   **FGVC-Aircraft Pretrained**: Place the weight file at `pretrained/aircraft/best.pt`.
 *   **Stanford Cars Pretrained**: Place the weight file at `pretrained/cars/best.pt`.
 
@@ -80,11 +81,14 @@ python preprocess/prep_cars.py
 
 ## 2. 🏋️ Training
 
-#### Training on Swin-T v1 backbone from scratch
+#### Training
 If you want to train the models from scratch:
 ```zsh
-# CUB-200-2011 Training
+# CUB-200-2011 Training (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT.yaml
+
+# CUB-200-2011 Training (ConvNeXt-Tiny)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1.yaml
 
 # FGVC-Aircraft Training
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT.yaml
@@ -98,11 +102,6 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 
 ---
 
-#### Training on ConvNeXt-Tiny backbone from scratch
-```zsh
-# CUB-200-2011 Training
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1.yaml
-```
 
 
 ## 3. 📊 Evaluation & Inference
@@ -113,7 +112,7 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT_Pre.yaml
 
 # CUB-200-2011 (ConvNeXt-Tiny)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1.yaml
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1_Pre.yaml
 
 # FGVC-Aircraft
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT_Pre.yaml
@@ -121,7 +120,7 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 # Stanford Cars
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT_Pre.yaml
 ```
-*   **Condition**: Set `train_root: ~` in your YAML. For configs without a dedicated `_Pre.yaml` (such as `CUB200_ConvNV1.yaml`), you must manually set `train_root: ~` and point `pretrained` to your checkpoint (e.g., `./records/CUB200-ConvNV1/ConvNV1-001/backup/best.pt`).
+*   **Condition**: Set `train_root: ~` in your YAML. All datasets have a dedicated `_Pre.yaml` config (e.g., `CUB200_ConvNV1_Pre.yaml`) which has `train_root` set to `~` and `pretrained` set to the respective pre-trained model path.
 *   **Output**: `eval_results.txt`.
 
 ### Option B: Detailed Analysis (via `infer.py`)
@@ -130,7 +129,7 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 python infer.py --c ./configs/CUB200_SwinT_Pre.yaml
 
 # CUB-200-2011 (ConvNeXt-Tiny) Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/CUB200_ConvNV1.yaml
+python infer.py --c ./configs/CUB200_ConvNV1_Pre.yaml
 
 # FGVC-Aircraft Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Aircraft_SwinT_Pre.yaml
@@ -159,7 +158,7 @@ Generate Grad-CAM heatmaps to see where the model is looking.
 python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
 
 # CUB-200-2011 (ConvNeXt-Tiny) Heatmap
-python heat.py --c ./configs/CUB200_ConvNV1.yaml --img ./vis/001.jpg --save_img ./vis/001/
+python heat.py --c ./configs/CUB200_ConvNV1_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
 
 # FGVC-Aircraft Heatmap
 python heat.py --c ./configs/Aircraft_SwinT_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
