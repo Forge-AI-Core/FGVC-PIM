@@ -6,7 +6,7 @@ train_root: ./datas/CUB-200-2011/train/
 val_root: ./datas/CUB-200-2011/test/
 data_size: 448
 num_workers: 8
-batch_size: 16
+batch_size: 8
 model_name: convnext
 pretrained: ~
 optimizer: SGD
@@ -29,6 +29,6 @@ lambda_b: 0.5
 lambda_s: 0.0
 lambda_n: 5.0
 lambda_c: 1.0
-update_freq: 1
+update_freq: 2
 log_freq: 100
 eval_freq: 10
