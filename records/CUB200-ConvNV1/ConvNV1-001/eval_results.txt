@@ -1,0 +1,19 @@
+[Evaluation Results]
+Project: CUB200-ConvNV1, Experiment: ConvNV1-001
+Samples: 5794
+
+    layer1-top-1 89.299%
+    layer1-top-3 97.049%
+    layer2-top-1 89.178%
+    layer2-top-3 97.049%
+    layer3-top-1 89.282%
+    layer3-top-3 97.066%
+    layer4-top-1 89.23%
+    layer4-top-3 97.014%
+    combiner-top-1 89.593%
+    combiner-top-3 96.41%
+    Precision 89.746%
+    Recall 89.723%
+    F1-Score 89.534%
+
+BEST_ACC: combiner-top-1 89.593% 

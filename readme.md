@@ -52,7 +52,8 @@ source .venv/bin/activate
 *   **Stanford Cars**: [Download Link](https://drive.google.com/drive/folders/1fnB_L1fnx3kTugqt2DkqdeX06K2XZCIu)
 
 #### 📥 Download Pretrained Weights
-*   **CUB-200-2011 Pretrained**: Place the weight file at `pretrained/cub200/best.pt`.
+*   **CUB-200-2011 Pretrained (Swin-T)**: Place the weight file at `pretrained/cub200/best.pt`.
+*   **CUB-200-2011 Pretrained (ConvNeXt-Tiny)**: Place the weight file at `pretrained/cub200/convN/best.pt`.
 *   **FGVC-Aircraft Pretrained**: Place the weight file at `pretrained/aircraft/best.pt`.
 *   **Stanford Cars Pretrained**: Place the weight file at `pretrained/cars/best.pt`.
 
@@ -79,10 +80,15 @@ python preprocess/prep_cars.py
 ---
 
 ## 2. 🏋️ Training
+
+#### Training
 If you want to train the models from scratch:
 ```zsh
-# CUB-200-2011 Training
+# CUB-200-2011 Training (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT.yaml
+
+# CUB-200-2011 Training (ConvNeXt-Tiny)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1.yaml
 
 # FGVC-Aircraft Training
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT.yaml
@@ -96,26 +102,34 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 
 ---
 
+
+
 ## 3. 📊 Evaluation & Inference
 
 ### Option A: Quick Accuracy Check (via `main.py`)
 ```zsh
-# CUB-200-2011
+# CUB-200-2011 (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT_Pre.yaml
 
+# CUB-200-2011 (ConvNeXt-Tiny)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1_Pre.yaml
+
 # FGVC-Aircraft
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cachepython main.py --c ./configs/Aircraft_SwinT_Pre.yaml
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT_Pre.yaml
 
 # Stanford Cars
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT_Pre.yaml
 ```
-*   **Condition**: Set `train_root: ~` in your YAML.
+*   **Condition**: Set `train_root: ~` in your YAML. All datasets have a dedicated `_Pre.yaml` config (e.g., `CUB200_ConvNV1_Pre.yaml`) which has `train_root` set to `~` and `pretrained` set to the respective pre-trained model path.
 *   **Output**: `eval_results.txt`.
 
 ### Option B: Detailed Analysis (via `infer.py`)
 ```zsh
-# CUB-200-2011 Detailed Scoring & Excel/Confusion Matrix
+# CUB-200-2011 (Swin-T) Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/CUB200_SwinT_Pre.yaml
+
+# CUB-200-2011 (ConvNeXt-Tiny) Detailed Scoring & Excel/Confusion Matrix
+python infer.py --c ./configs/CUB200_ConvNV1_Pre.yaml
 
 # FGVC-Aircraft Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Aircraft_SwinT_Pre.yaml
@@ -140,8 +154,11 @@ python infer.py --c ./configs/Cars_SwinT_Pre.yaml
 ## 4. 🔥 HeatMap Visualization
 Generate Grad-CAM heatmaps to see where the model is looking.
 ```zsh
-# CUB-200-2011 Heatmap
+# CUB-200-2011 (Swin-T) Heatmap
 python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
+
+# CUB-200-2011 (ConvNeXt-Tiny) Heatmap
+python heat.py --c ./configs/CUB200_ConvNV1_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
 
 # FGVC-Aircraft Heatmap
 python heat.py --c ./configs/Aircraft_SwinT_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
@@ -210,6 +227,7 @@ The following changes have been made from the [original repository](https://gith
 | **eval.py — `_average_top_k_result` removed** | Removed `_average_top_k_result` call from `evaluate()` (Python loop bottleneck). `highest-1` ~ `highest-5` metrics are no longer computed. Removed from terminal output and graphs as well. |
 | **Multi-device support** | Added `get_device()` util — auto-detects CUDA, Apple MPS, and CPU |
 | **FGVC-Aircraft config** | Added `configs/Aircraft_SwinT.yaml` for 100-class aircraft fine-tuning |
+| **ConvNeXt-Tiny config** | Added `configs/CUB200_ConvNV1.yaml` for CUB-200-2011 ConvNeXt-Tiny fine-tuning |
 
 ---
 

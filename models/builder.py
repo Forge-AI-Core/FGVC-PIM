@@ -146,7 +146,44 @@ def build_efficientnet(pretrained: bool = True,
                                    use_combiner = num_selects,
                                    comb_proj_size = comb_proj_size)
 
+def build_convnext(pretrained: bool = True,
+                   return_nodes: Union[dict, None] = None,
+                   num_selects: Union[dict, None] = None,
+                   img_size: int = 448,
+                   use_fpn: bool = True,
+                   fpn_size: int = 1536,
+                   proj_type: str = "Conv",
+                   upsample_type: str = "Bilinear",
+                   use_selection: bool = True,
+                   num_classes: int = 200,
+                   use_combiner: bool = True,
+                   comb_proj_size: Union[int, None] = None):
 
+    import timm
+
+    if num_selects is None:
+        num_selects = {
+            'layer1': 32,
+            'layer2': 32,
+            'layer3': 32,
+            'layer4': 32,
+        }
+
+    backbone = timm.create_model('convnext_large_in22k', pretrained=pretrained)
+    backbone.train()
+
+    return pim_module.PluginMoodel(backbone=backbone,
+                                   return_nodes=None,
+                                   img_size=img_size,
+                                   use_fpn=use_fpn,
+                                   fpn_size=fpn_size,
+                                   proj_type=proj_type,
+                                   upsample_type=upsample_type,
+                                   use_selection=use_selection,
+                                   num_classes=num_classes,
+                                   num_selects=num_selects,
+                                   use_combiner=num_selects,
+                                   comb_proj_size=comb_proj_size)
 
 
 def build_vit16(pretrained: str = "./vit_base_patch16_224_miil_21k.pth",
@@ -305,5 +342,6 @@ MODEL_GETTER = {
     "resnet50":build_resnet50,
     "swin-t":build_swintransformer,
     "vit":build_vit16,
-    "efficient":build_efficientnet
+    "efficient":build_efficientnet,
+    "convnext": build_convnext,
 }

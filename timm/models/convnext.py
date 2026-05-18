@@ -272,13 +272,19 @@ class ConvNeXt(nn.Module):
 
     def forward_features(self, x):
         x = self.stem(x)
-        x = self.stages(x)
-        x = self.norm_pre(x)
-        return x
+        # x = self.stages(x)
+        # x = self.norm_pre(x)
+        # return x
+        l1 = self.stages[0](x)  # ← stage별로 따로 호출
+        l2 = self.stages[1](l1)
+        l3 = self.stages[2](l2)
+        l4 = self.stages[3](l3)
+
+        return {"layer1": l1, "layer2": l2, "layer3": l3, "layer4": l4}  # ← dict로 반환
 
     def forward(self, x):
         x = self.forward_features(x)
-        x = self.head(x)
+        # x = self.head(x)
         return x
 
 
