@@ -115,13 +115,13 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 # CUB-200-2011 (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT_Pre.yaml
 
-# CUB-200-2011 (ConvNeXt-Tiny)
+# CUB-200-2011 (ConvNeXt-L)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1_Pre.yaml
 
 # FGVC-Aircraft (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT_Pre.yaml
 
-# FGVC-Aircraft (ConvNeXt-Tiny)
+# FGVC-Aircraft (ConvNeXt-L)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_ConvNV1_Pre.yaml
 
 # Stanford Cars
