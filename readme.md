@@ -53,8 +53,9 @@ source .venv/bin/activate
 
 #### 📥 Download Pretrained Weights
 *   **CUB-200-2011 Pretrained (Swin-T)**: Place the weight file at `pretrained/cub200/best.pt`.
-*   **CUB-200-2011 Pretrained (ConvNeXt-Tiny)**: Place the weight file at `pretrained/cub200/convN/best.pt`.
-*   **FGVC-Aircraft Pretrained**: Place the weight file at `pretrained/aircraft/best.pt`.
+*   **CUB-200-2011 Pretrained (ConvNeXt-L)**: Place the weight file at `pretrained/cub200/convN/best.pt`.
+*   **FGVC-Aircraft Pretrained (Swin-T)**: Place the weight file at `pretrained/aircraft/best.pt`.
+*   **FGVC-Aircraft Pretrained (ConvNeXt-L)**: Place the weight file at `pretrained/aircraft/convN/best.pt`.
 *   **Stanford Cars Pretrained**: Place the weight file at `pretrained/cars/best.pt`.
 
 ### 1.3. Data Preprocessing (FGVC-Aircraft)
@@ -90,8 +91,11 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 # CUB-200-2011 Training (ConvNeXt-Tiny)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1.yaml
 
-# FGVC-Aircraft Training
+# FGVC-Aircraft Training (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT.yaml
+
+# FGVC-Aircraft Training (ConvNeXt-Tiny)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_ConvNV1.yaml
 
 # Stanford Cars Training
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT.yaml
@@ -114,8 +118,11 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 # CUB-200-2011 (ConvNeXt-Tiny)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1_Pre.yaml
 
-# FGVC-Aircraft
+# FGVC-Aircraft (Swin-T)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT_Pre.yaml
+
+# FGVC-Aircraft (ConvNeXt-Tiny)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_ConvNV1_Pre.yaml
 
 # Stanford Cars
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT_Pre.yaml
@@ -128,11 +135,14 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 # CUB-200-2011 (Swin-T) Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/CUB200_SwinT_Pre.yaml
 
-# CUB-200-2011 (ConvNeXt-Tiny) Detailed Scoring & Excel/Confusion Matrix
+# CUB-200-2011 (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/CUB200_ConvNV1_Pre.yaml
 
-# FGVC-Aircraft Detailed Scoring & Excel/Confusion Matrix
+# FGVC-Aircraft (Swin-T) Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Aircraft_SwinT_Pre.yaml
+
+# FGVC-Aircraft (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
+python infer.py --c ./configs/Aircraft_ConvNV1_Pre.yaml
 
 # Stanford Cars Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Cars_SwinT_Pre.yaml
@@ -157,11 +167,14 @@ Generate Grad-CAM heatmaps to see where the model is looking.
 # CUB-200-2011 (Swin-T) Heatmap
 python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
 
-# CUB-200-2011 (ConvNeXt-Tiny) Heatmap
+# CUB-200-2011 (ConvNeXt-L) Heatmap
 python heat.py --c ./configs/CUB200_ConvNV1_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
 
-# FGVC-Aircraft Heatmap
+# FGVC-Aircraft (Swin-T) Heatmap
 python heat.py --c ./configs/Aircraft_SwinT_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
+
+# FGVC-Aircraft (ConvNeXt-L) Heatmap
+python heat.py --c ./configs/Aircraft_ConvNV1_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
 
 # Stanford Cars Heatmap
 python heat.py --c ./configs/Cars_SwinT_Pre.yaml --img ./vis/car_sample.jpg --save_img ./vis/car_out/
@@ -228,6 +241,7 @@ The following changes have been made from the [original repository](https://gith
 | **Multi-device support** | Added `get_device()` util — auto-detects CUDA, Apple MPS, and CPU |
 | **FGVC-Aircraft config** | Added `configs/Aircraft_SwinT.yaml` for 100-class aircraft fine-tuning |
 | **ConvNeXt-Tiny config** | Added `configs/CUB200_ConvNV1.yaml` for CUB-200-2011 ConvNeXt-Tiny fine-tuning |
+| **ConvNeXt-Tiny config (Aircraft)** | Added `configs/Aircraft_ConvNV1.yaml` for FGVC-Aircraft ConvNeXt-Tiny fine-tuning |
 
 ---
 
