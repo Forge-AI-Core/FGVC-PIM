@@ -32,6 +32,7 @@ from .rexnet import *
 from .selecsls import *
 from .senet import *
 from .sknet import *
+from .convnext import *
 from .swin_transformer import *
 from .tnt import *
 from .tresnet import *
