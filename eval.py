@@ -192,8 +192,6 @@ def evaluate(args, model, test_loader):
         """ accumulate """
         for batch_id, (ids, datas, labels) in enumerate(test_loader):
 
-            score_names = []
-            scores = []
             datas = datas.to(args.device)
 
             outs = model(datas)
@@ -314,7 +312,7 @@ def evaluate_cm(args, model, test_loader):
         y_predict = results_mat[:, 2].transpose().tolist()[0]
         y_predict = list(map(int, y_predict))
 
-        folders = os.listdir(args.val_root)
+        folders = [f for f in os.listdir(args.val_root) if os.path.isdir(os.path.join(args.val_root, f))]
         folders.sort()  # sort by alphabet
         print("[dataset] class:", folders)
         df_confusion = confusion_matrix(y_actual, y_predict)
