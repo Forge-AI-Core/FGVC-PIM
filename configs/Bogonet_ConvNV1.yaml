@@ -12,11 +12,11 @@ pretrained: ~
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
-max_epochs: 50
+max_epochs: 30
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
-fpn_size: 1536
+fpn_size: 1024
 use_selection: True
 num_classes: 3
 num_selects: 
@@ -31,4 +31,4 @@ lambda_n: 5.0
 lambda_c: 1.0
 update_freq: 1
 log_freq: 100
-eval_freq: 10
+eval_freq: 5
