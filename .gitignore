@@ -25,6 +25,7 @@ pretrained/
 # Data
 data/
 datas/
+260519_datasets/
 cub200/
 *.zip
 *.tar
