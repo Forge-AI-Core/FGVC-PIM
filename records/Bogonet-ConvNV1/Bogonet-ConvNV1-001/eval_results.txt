@@ -1,0 +1,19 @@
+[Evaluation Results]
+Project: Bogonet-ConvNV1, Experiment: Bogonet-ConvNV1-001
+Samples: 3369
+
+    layer1-top-1 78.658%
+    layer1-top-3 100.0%
+    layer2-top-1 78.48%
+    layer2-top-3 100.0%
+    layer3-top-1 78.658%
+    layer3-top-3 100.0%
+    layer4-top-1 78.569%
+    layer4-top-3 100.0%
+    combiner-top-1 78.51%
+    combiner-top-3 100.0%
+    Precision 76.765%
+    Recall 73.933%
+    F1-Score 75.164%
+
+BEST_ACC: layer3-top-1 78.658% 
