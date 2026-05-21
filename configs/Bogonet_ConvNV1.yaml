@@ -1,5 +1,5 @@
 project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1-002-small
+exp_name: Bogonet-ConvNV1-003-large
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train/
@@ -16,7 +16,7 @@ max_epochs: 30
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
-fpn_size: 768
+fpn_size: 1536
 use_selection: True
 num_classes: 3
 num_selects: 

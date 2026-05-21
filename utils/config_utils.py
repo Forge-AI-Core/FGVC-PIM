@@ -1,6 +1,7 @@
 import yaml
 import os
 import argparse
+import shutil
 
 def load_yaml(args, yml):
     with open(yml, 'r', encoding='utf-8') as fyml:
@@ -16,6 +17,14 @@ def build_record_folder(args):
     args.save_dir = "./records/" + args.project_name + "/" + args.exp_name + "/"
     os.makedirs(args.save_dir, exist_ok=True)
     os.makedirs(args.save_dir + "backup/", exist_ok=True)
+
+    if hasattr(args, "c") and args.c:
+        if os.path.exists(args.c):
+            dest_path = os.path.join(args.save_dir, os.path.basename(args.c))
+            shutil.copy(args.c, dest_path)
+            print(f"Copied config file {args.c} to {dest_path}")
+        else:
+            print(f"[Warning] Config file {args.c} does not exist. Could not copy.")
 
 def get_args(with_deepspeed: bool=False):
 
