@@ -1,5 +1,5 @@
 project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1-002-WeightedRandomSampler-RandAugment
+exp_name: Bogonet-ConvNV1-002-small
 use_wandb: False
 wandb_entity: account
 train_root: ~
@@ -8,7 +8,7 @@ data_size: 256
 num_workers: 8
 batch_size: 16
 model_name: convnext
-pretrained: ./records/Bogonet-ConvNV1/Bogonet-ConvNV1-002-WeightedRandomSampler-RandAugment/backup/best.pt
+pretrained: ./records/Bogonet-ConvNV1/Bogonet-ConvNV1-002-small/backup/best.pt
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
