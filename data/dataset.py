@@ -1,6 +1,5 @@
 import os
 import cv2
-import numpy as np
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
@@ -10,24 +9,11 @@ def build_loader(args):
     train_set, train_loader = None, None
     if args.train_root is not None:
         train_set = ImageDataset(istrain=True, root=args.train_root, data_size=args.data_size, return_index=True)
-        
-        # Calculate weights for WeightedRandomSampler
-        labels = [info["label"] for info in train_set.data_infos]
-        class_counts = np.bincount(labels)
-        class_weights = 1.0 / class_counts
-        sample_weights = [class_weights[label] for label in labels]
-        
-        sampler = torch.utils.data.WeightedRandomSampler(
-            weights=sample_weights,
-            num_samples=len(sample_weights),
-            replacement=True
-        )
-        
         train_loader = torch.utils.data.DataLoader(
-            train_set, 
-            num_workers=args.num_workers, 
-            batch_size=args.batch_size, 
-            sampler=sampler
+            train_set,
+            num_workers=args.num_workers,
+            shuffle=True,
+            batch_size=args.batch_size
         )
 
     val_set, val_loader = None, None
@@ -70,23 +56,10 @@ class ImageDataset(torch.utils.data.Dataset):
         # 768:
         resize_size = int(data_size * 1.33)
         if istrain:
-            # 소수 클래스(danger, excluded) 전용 추가 증강
-            # RandomRotation: 스크랩은 무작위 방향으로 놓임
-            # ColorJitter: 조명 변화 대응 (transforms_post보다 약하게)
-            self.minority_augment = transforms.Compose([
-                transforms.RandomRotation(degrees=45),
-                transforms.RandomPerspective(distortion_scale=0.1, p=0.3),
-            ])
-            # PIL 단계 transforms (RandAugment 적용 전까지)
-            # RandomVerticalFlip 추가: 철스크랩은 어느 방향으로든 놓임
-            self.transforms_pre = transforms.Compose([
+            self.transforms = transforms.Compose([
                         transforms.Resize((resize_size, resize_size), Image.BILINEAR),
                         transforms.RandomCrop((data_size, data_size)),
                         transforms.RandomHorizontalFlip(),
-                        transforms.RandomVerticalFlip(),
-                ])
-            # Tensor 단계 transforms
-            self.transforms_post = transforms.Compose([
                         transforms.RandomApply([transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 5))], p=0.1),
                         transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.1),
                         transforms.ToTensor(),
@@ -132,16 +105,7 @@ class ImageDataset(torch.utils.data.Dataset):
         # to PIL.Image
         img = Image.fromarray(img)
 
-        if self.istrain:
-            # 1단계: resize → crop → flip (PIL 상태)
-            img = self.transforms_pre(img)
-            # 2단계: 소수 클래스(danger=1, excluded=2)에만 추가 증강 적용
-            if label in [1, 2]:
-                img = self.minority_augment(img)
-            # 3단계: GaussianBlur, Sharpness, ToTensor, Normalize
-            img = self.transforms_post(img)
-        else:
-            img = self.transforms(img)
+        img = self.transforms(img)
         
         if self.return_index:
             # return index, img, sub_imgs, label, sub_boundarys
