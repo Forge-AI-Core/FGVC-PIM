@@ -12,8 +12,18 @@ Samples: 3369
     layer4-top-3 100.0%
     combiner-top-1 78.51%
     combiner-top-3 100.0%
-    Precision 76.765%
-    Recall 73.933%
-    F1-Score 75.164%
+
+[Overall Performance]
+    Precision: 76.765%
+    Recall: 73.933%
+    F1-Score: 75.164%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 87.816% | Precision: 81.054% | Recall: 87.816% | F1-Score: 84.299%
+  - Class 'danger':
+    ACC: 69.082% | Precision: 75.642% | Recall: 69.082% | F1-Score: 72.213%
+  - Class 'excluded':
+    ACC: 64.903% | Precision: 73.6% | Recall: 64.903% | F1-Score: 68.978%
 
 BEST_ACC: layer3-top-1 78.658% 
