@@ -5,7 +5,6 @@ import torchvision.transforms as transforms
 from PIL import Image
 
 
-
 def build_loader(args):
     train_set, train_loader = None, None
     if args.train_root is not None:

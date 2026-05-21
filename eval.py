@@ -192,6 +192,8 @@ def evaluate(args, model, test_loader):
         """ accumulate """
         for batch_id, (ids, datas, labels) in enumerate(test_loader):
 
+            score_names = []
+            scores = []
             datas = datas.to(args.device)
 
             outs = model(datas)
@@ -240,6 +242,27 @@ def evaluate(args, model, test_loader):
             eval_acces["Precision"] = round(prec * 100, 3)
             eval_acces["Recall"] = round(rec * 100, 3)
             eval_acces["F1-Score"] = round(f1 * 100, 3)
+
+            # Per-class metrics
+            cm = confusion_matrix(all_labels, all_preds)
+            class_precs, class_recs, class_f1s, _ = precision_recall_fscore_support(
+                all_labels, all_preds, average=None, zero_division=0)
+
+            try:
+                dataset_root = test_loader.dataset.root
+                class_names = [f for f in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, f))]
+                class_names.sort()
+            except Exception:
+                class_names = [f"class_{i}" for i in range(len(class_precs))]
+
+            for i, name in enumerate(class_names):
+                if i < len(class_precs):
+                    row_sum = cm[i].sum()
+                    class_acc = cm[i][i] / row_sum if row_sum > 0 else 0.0
+                    eval_acces[f"class_{name}_ACC"] = round(class_acc * 100, 3)
+                    eval_acces[f"class_{name}_Precision"] = round(class_precs[i] * 100, 3)
+                    eval_acces[f"class_{name}_Recall"] = round(class_recs[i] * 100, 3)
+                    eval_acces[f"class_{name}_F1-Score"] = round(class_f1s[i] * 100, 3)
 
     return best_top1, best_top1_name, eval_acces
 
@@ -312,6 +335,35 @@ def evaluate_cm(args, model, test_loader):
         y_predict = results_mat[:, 2].transpose().tolist()[0]
         y_predict = list(map(int, y_predict))
 
+        if len(y_predict) > 0:
+            # 1. Macro Averaged
+            prec, rec, f1, _ = precision_recall_fscore_support(
+                y_actual, y_predict, average='macro', zero_division=0)
+            eval_acces["Precision"] = round(prec * 100, 3)
+            eval_acces["Recall"] = round(rec * 100, 3)
+            eval_acces["F1-Score"] = round(f1 * 100, 3)
+
+            # 2. Per-class metrics
+            cm = confusion_matrix(y_actual, y_predict)
+            class_precs, class_recs, class_f1s, _ = precision_recall_fscore_support(
+                y_actual, y_predict, average=None, zero_division=0)
+
+            try:
+                dataset_root = test_loader.dataset.root
+                class_names = [f for f in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, f))]
+                class_names.sort()
+            except Exception:
+                class_names = [f"class_{i}" for i in range(len(class_precs))]
+
+            for i, name in enumerate(class_names):
+                if i < len(class_precs):
+                    row_sum = cm[i].sum()
+                    class_acc = cm[i][i] / row_sum if row_sum > 0 else 0.0
+                    eval_acces[f"class_{name}_ACC"] = round(class_acc * 100, 3)
+                    eval_acces[f"class_{name}_Precision"] = round(class_precs[i] * 100, 3)
+                    eval_acces[f"class_{name}_Recall"] = round(class_recs[i] * 100, 3)
+                    eval_acces[f"class_{name}_F1-Score"] = round(class_f1s[i] * 100, 3)
+
         folders = [f for f in os.listdir(args.val_root) if os.path.isdir(os.path.join(args.val_root, f))]
         folders.sort()  # sort by alphabet
         print("[dataset] class:", folders)
@@ -331,9 +383,40 @@ def eval_and_save(args, model, val_loader, tlogger):
     msg += "Project: {}, Experiment: {}\n".format(args.project_name, args.exp_name)
     msg += "Samples: {}\n".format(len(val_loader.dataset))
     msg += "\n"
+    
+    # 1. 일반 레이어 성능 출력
     for name in eval_acces:
-        msg += "    {} {}%\n".format(name, eval_acces[name])
+        if not name.startswith("class_") and name not in ["Precision", "Recall", "F1-Score"]:
+            msg += "    {} {}%\n".format(name, eval_acces[name])
     msg += "\n"
+    
+    # 2. 글로벌 결합 성능 요약
+    msg += "[Overall Performance]\n"
+    msg += "    Precision: {}%\n".format(eval_acces.get("Precision", 0))
+    msg += "    Recall: {}%\n".format(eval_acces.get("Recall", 0))
+    msg += "    F1-Score: {}%\n".format(eval_acces.get("F1-Score", 0))
+    msg += "\n"
+    
+    # 3. 클래스별 성능 요약
+    class_keys = sorted([k for k in eval_acces.keys() if k.startswith("class_")])
+    if len(class_keys) > 0:
+        msg += "[Per-Class Performance (Combiner)]\n"
+        classes_data = {}
+        for k in class_keys:
+            parts = k.split("_")
+            metric = parts[-1]
+            cname = "_".join(parts[1:-1])
+            if cname not in classes_data:
+                classes_data[cname] = {}
+            classes_data[cname][metric] = eval_acces[k]
+            
+        for cname, metrics in classes_data.items():
+            msg += "  - Class '{}':\n".format(cname)
+            msg += "    ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%\n".format(
+                metrics.get("ACC", 0), metrics.get("Precision", 0), metrics.get("Recall", 0), metrics.get("F1-Score", 0)
+            )
+        msg += "\n"
+        
     msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
 
     with open(args.save_dir + "eval_results.txt", "w") as ftxt:
@@ -350,9 +433,40 @@ def eval_and_cm(args, model, val_loader, tlogger):
     msg += "Project: {}, Experiment: {}\n".format(args.project_name, args.exp_name)
     msg += "Samples: {}\n".format(len(val_loader.dataset))
     msg += "\n"
+    
+    # 1. 일반 레이어 성능 출력
     for name in eval_acces:
-        msg += "    {} {}%\n".format(name, eval_acces[name])
+        if not name.startswith("class_") and name not in ["Precision", "Recall", "F1-Score"]:
+            msg += "    {} {}%\n".format(name, eval_acces[name])
     msg += "\n"
+    
+    # 2. 글로벌 결합 성능 요약
+    msg += "[Overall Performance]\n"
+    msg += "    Precision: {}%\n".format(eval_acces.get("Precision", 0))
+    msg += "    Recall: {}%\n".format(eval_acces.get("Recall", 0))
+    msg += "    F1-Score: {}%\n".format(eval_acces.get("F1-Score", 0))
+    msg += "\n"
+    
+    # 3. 클래스별 성능 요약
+    class_keys = sorted([k for k in eval_acces.keys() if k.startswith("class_")])
+    if len(class_keys) > 0:
+        msg += "[Per-Class Performance (Combiner)]\n"
+        classes_data = {}
+        for k in class_keys:
+            parts = k.split("_")
+            metric = parts[-1]
+            cname = "_".join(parts[1:-1])
+            if cname not in classes_data:
+                classes_data[cname] = {}
+            classes_data[cname][metric] = eval_acces[k]
+            
+        for cname, metrics in classes_data.items():
+            msg += "  - Class '{}':\n".format(cname)
+            msg += "    ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%\n".format(
+                metrics.get("ACC", 0), metrics.get("Precision", 0), metrics.get("Recall", 0), metrics.get("F1-Score", 0)
+            )
+        msg += "\n"
+        
     msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
 
     with open(args.save_dir + "infer_results.txt", "w") as ftxt:
