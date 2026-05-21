@@ -4,7 +4,6 @@ import numpy as np
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-from .randaug import RandAugment
 
 
 def build_loader(args):
@@ -71,9 +70,16 @@ class ImageDataset(torch.utils.data.Dataset):
         # 768:
         resize_size = int(data_size * 1.33)
         if istrain:
-            # RandAugment는 resize/crop 후 PIL 상태에서 적용해야 img_size가 정확히 맞음
-            # m=7: 강도 높임 (철스크랩 산업 이미지 → 밝기/대비 변화 크고 방향 무관)
-            self.minority_augment = RandAugment(n=2, m=7, img_size=data_size)
+            # 소수 클래스(danger, excluded) 전용 추가 증강
+            # RandomRotation: 스크랩은 무작위 방향으로 놓임
+            # ColorJitter: 조명 변화 대응 (transforms_post보다 약하게)
+            self.minority_augment = transforms.Compose([
+                transforms.RandomRotation(degrees=45),
+                transforms.RandomPerspective(distortion_scale=0.1, p=0.3),
+                transforms.RandomApply([
+                    transforms.ColorJitter(brightness=0.2)  # 밝기만 (조명 변화)
+                ], p=0.3),
+            ])
             # PIL 단계 transforms (RandAugment 적용 전까지)
             # RandomVerticalFlip 추가: 철스크랩은 어느 방향으로든 놓임
             self.transforms_pre = transforms.Compose([
@@ -85,7 +91,6 @@ class ImageDataset(torch.utils.data.Dataset):
             # Tensor 단계 transforms (RandAugment 적용 후)
             # ColorJitter 추가: 산업 현장 조명 변화 대응
             self.transforms_post = transforms.Compose([
-                        transforms.RandomApply([transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.2, hue=0.1)], p=0.3),
                         transforms.RandomApply([transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 5))], p=0.1),
                         transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.1),
                         transforms.ToTensor(),
@@ -134,7 +139,7 @@ class ImageDataset(torch.utils.data.Dataset):
         if self.istrain:
             # 1단계: resize → crop → flip (PIL 상태)
             img = self.transforms_pre(img)
-            # 2단계: 소수 클래스(danger=1, excluded=2)에만 RandAugment 적용 (정확한 img_size로)
+            # 2단계: 소수 클래스(danger=1, excluded=2)에만 추가 증강 적용
             if label in [1, 2]:
                 img = self.minority_augment(img)
             # 3단계: GaussianBlur, Sharpness, ToTensor, Normalize

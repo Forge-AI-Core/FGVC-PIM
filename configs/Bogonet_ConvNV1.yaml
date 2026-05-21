@@ -31,4 +31,4 @@ lambda_n: 5.0
 lambda_c: 1.0
 update_freq: 1
 log_freq: 100
-eval_freq: 5
+eval_freq: 3
