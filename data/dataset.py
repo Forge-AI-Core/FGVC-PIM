@@ -76,9 +76,6 @@ class ImageDataset(torch.utils.data.Dataset):
             self.minority_augment = transforms.Compose([
                 transforms.RandomRotation(degrees=45),
                 transforms.RandomPerspective(distortion_scale=0.1, p=0.3),
-                transforms.RandomApply([
-                    transforms.ColorJitter(brightness=0.2)  # 밝기만 (조명 변화)
-                ], p=0.3),
             ])
             # PIL 단계 transforms (RandAugment 적용 전까지)
             # RandomVerticalFlip 추가: 철스크랩은 어느 방향으로든 놓임
@@ -88,8 +85,7 @@ class ImageDataset(torch.utils.data.Dataset):
                         transforms.RandomHorizontalFlip(),
                         transforms.RandomVerticalFlip(),
                 ])
-            # Tensor 단계 transforms (RandAugment 적용 후)
-            # ColorJitter 추가: 산업 현장 조명 변화 대응
+            # Tensor 단계 transforms
             self.transforms_post = transforms.Compose([
                         transforms.RandomApply([transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 5))], p=0.1),
                         transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.1),
