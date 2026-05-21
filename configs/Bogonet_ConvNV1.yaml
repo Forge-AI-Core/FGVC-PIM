@@ -1,5 +1,5 @@
 project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1-001
+exp_name: Bogonet-ConvNV1-002-WeightedRandomSampler-RandAugment
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train/
