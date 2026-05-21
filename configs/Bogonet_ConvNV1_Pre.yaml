@@ -1,5 +1,5 @@
 project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1- Bogonet-ConvNV1-002-WeightedRandomSampler-RandAugment
+exp_name: Bogonet-ConvNV1-002-WeightedRandomSampler-RandAugment
 use_wandb: False
 wandb_entity: account
 train_root: ~
@@ -8,7 +8,7 @@ data_size: 256
 num_workers: 8
 batch_size: 16
 model_name: convnext
-pretrained: ./records/Bogonet-ConvNV1/Bogonet-ConvNV1-001/backup/best.pt  # 001 실험에서 학습된 베스트 가중치 로드
+pretrained: ./records/Bogonet-ConvNV1/Bogonet-ConvNV1-002-WeightedRandomSampler-RandAugment/backup/best.pt
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
@@ -16,7 +16,7 @@ max_epochs: 30
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
-fpn_size: 1024
+fpn_size: 768
 use_selection: True
 num_classes: 3
 num_selects: 

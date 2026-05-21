@@ -16,7 +16,7 @@ max_epochs: 30
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
-fpn_size: 1024
+fpn_size: 768
 use_selection: True
 num_classes: 3
 num_selects: 
