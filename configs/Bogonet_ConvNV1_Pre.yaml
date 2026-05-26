@@ -1,14 +1,14 @@
 project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1-004-large-crops_10pct
+exp_name: Bogonet-ConvNV1-005-large-crops_0pct
 use_wandb: False
 wandb_entity: account
 train_root: ~
-val_root: ./classification_split/crops_10pct_split/test/
+val_root: ./classification_split/crops_0pct_split/test/
 data_size: 256
 num_workers: 8
 batch_size: 16
 model_name: convnext
-pretrained: ./records/Bogonet-ConvNV1/Bogonet-ConvNV1-003-large/backup/best.pt
+pretrained: ./records/Bogonet-ConvNV1/Bogonet-ConvNV1-005-large-crops_0pct/backup/best.pt
 optimizer: SGD
 max_lr: 0.0005
 wdecay: 0.0005
