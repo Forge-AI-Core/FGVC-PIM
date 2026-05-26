@@ -1,9 +1,9 @@
 project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1-003-large
+exp_name: Bogonet-ConvNV1-004-large-crops_10pct
 use_wandb: False
 wandb_entity: account
-train_root: ./classification_split/crops_25pct_split/train/
-val_root: ./classification_split/crops_25pct_split/test/
+train_root: ./classification_split/crops_10pct_split/train/
+val_root: ./classification_split/crops_10pct_split/test/
 data_size: 256
 num_workers: 8
 batch_size: 16

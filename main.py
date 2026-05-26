@@ -333,6 +333,18 @@ def main(args, tlogger):
 
     save_metrics_plots(args, train_history, eval_history)
 
+    # Save final eval results with the best model
+    if val_loader is not None and train_loader is not None:
+        import os
+        best_path = os.path.join(args.save_dir, "backup", "best.pt")
+        if os.path.exists(best_path):
+            tlogger.print("Loading best model for final evaluation...")
+            checkpoint = torch.load(best_path, map_location=args.device, weights_only=False)
+            model_to_load = model.module if hasattr(model, "module") else model
+            model_to_load.load_state_dict(checkpoint['model'])
+            from eval import eval_and_save
+            eval_and_save(args, model, val_loader, tlogger)
+
 
 def save_metrics_plots(args, train_history, eval_history):
     """ Train 그래프 """
