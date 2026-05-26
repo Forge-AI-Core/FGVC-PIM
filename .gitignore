@@ -26,6 +26,7 @@ pretrained/
 data/
 datas/
 260519_datasets/
+classification_split/
 cub200/
 *.zip
 *.tar

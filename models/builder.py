@@ -169,7 +169,18 @@ def build_convnext(pretrained: bool = True,
             'layer4': 32,
         }
 
-    backbone = timm.create_model('convnext_large_in22k', pretrained=pretrained)
+    # Dynamically select ConvNeXt backbone based on FPN projection size
+    # ConvNeXt-S/T: last stage 768ch  → fpn_size 768
+    # ConvNeXt-B:   last stage 1024ch → fpn_size 1024
+    # ConvNeXt-L:   last stage 1536ch → fpn_size 1536
+    if fpn_size == 768:
+        backbone_name = 'convnext_small_in22k'
+    elif fpn_size == 1024:
+        backbone_name = 'convnext_base_in22k'
+    else:
+        backbone_name = 'convnext_large_in22k'
+
+    backbone = timm.create_model(backbone_name, pretrained=pretrained)
     backbone.train()
 
     return pim_module.PluginMoodel(backbone=backbone,

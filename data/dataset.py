@@ -1,20 +1,20 @@
 import os
-import numpy as np
 import cv2
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-import copy
-import torch
-
-from .randaug import RandAugment
 
 
 def build_loader(args):
     train_set, train_loader = None, None
     if args.train_root is not None:
         train_set = ImageDataset(istrain=True, root=args.train_root, data_size=args.data_size, return_index=True)
-        train_loader = torch.utils.data.DataLoader(train_set, num_workers=args.num_workers, shuffle=True, batch_size=args.batch_size)
+        train_loader = torch.utils.data.DataLoader(
+            train_set,
+            num_workers=args.num_workers,
+            shuffle=True,
+            batch_size=args.batch_size
+        )
 
     val_set, val_loader = None, None
     if args.val_root is not None:
@@ -43,6 +43,7 @@ class ImageDataset(torch.utils.data.Dataset):
         self.root = root
         self.data_size = data_size
         self.return_index = return_index
+        self.istrain = istrain
 
         """ declare data augmentation """
         normalize = transforms.Normalize(
@@ -53,11 +54,10 @@ class ImageDataset(torch.utils.data.Dataset):
         # 448:600
         # 384:510
         # 768:
+        resize_size = int(data_size * 1.33)
         if istrain:
-            # transforms.RandomApply([RandAugment(n=2, m=3, img_size=data_size)], p=0.1)
-            # RandAugment(n=2, m=3, img_size=sub_data_size)
             self.transforms = transforms.Compose([
-                        transforms.Resize((510, 510), Image.BILINEAR),
+                        transforms.Resize((resize_size, resize_size), Image.BILINEAR),
                         transforms.RandomCrop((data_size, data_size)),
                         transforms.RandomHorizontalFlip(),
                         transforms.RandomApply([transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 5))], p=0.1),
@@ -67,7 +67,7 @@ class ImageDataset(torch.utils.data.Dataset):
                 ])
         else:
             self.transforms = transforms.Compose([
-                        transforms.Resize((510, 510), Image.BILINEAR),
+                        transforms.Resize((resize_size, resize_size), Image.BILINEAR),
                         transforms.CenterCrop((data_size, data_size)),
                         transforms.ToTensor(),
                         normalize
@@ -79,13 +79,15 @@ class ImageDataset(torch.utils.data.Dataset):
 
     def getDataInfo(self, root):
         data_infos = []
-        folders = os.listdir(root)
+        folders = [f for f in os.listdir(root) if os.path.isdir(os.path.join(root, f))]
         folders.sort() # sort by alphabet
         print("[dataset] class number:", len(folders))
+        valid_exts = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
         for class_id, folder in enumerate(folders):
-            files = os.listdir(root+folder)
+            files = [f for f in os.listdir(os.path.join(root, folder)) 
+                     if not f.startswith('.') and f.lower().endswith(valid_exts)]
             for file in files:
-                data_path = root+folder+"/"+file
+                data_path = os.path.join(root, folder, file)
                 data_infos.append({"path":data_path, "label":class_id})
         return data_infos
 
@@ -102,6 +104,7 @@ class ImageDataset(torch.utils.data.Dataset):
         
         # to PIL.Image
         img = Image.fromarray(img)
+
         img = self.transforms(img)
         
         if self.return_index:
