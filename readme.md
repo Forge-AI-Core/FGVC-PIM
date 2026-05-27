@@ -99,6 +99,9 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 
 # Stanford Cars Training
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT.yaml
+
+# Bogonet Training (ConvNeXt-L)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Bogonet_ConvNV1.yaml
 ```
 - **Configuration**: Modify YAML files in `./configs/`.
 - **Checkpointing**: Models are saved in `./records/{project_name}/{exp_name}/backup/`.
@@ -126,6 +129,9 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 
 # Stanford Cars
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT_Pre.yaml
+
+# Bogonet (ConvNeXt-L)
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
 ```
 *   **Condition**: Set `train_root: ~` in your YAML. All datasets have a dedicated `_Pre.yaml` config (e.g., `CUB200_ConvNV1_Pre.yaml`) which has `train_root` set to `~` and `pretrained` set to the respective pre-trained model path.
 *   **Output**: `eval_results.txt`.
@@ -146,6 +152,9 @@ python infer.py --c ./configs/Aircraft_ConvNV1_Pre.yaml
 
 # Stanford Cars Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Cars_SwinT_Pre.yaml
+
+# Bogonet (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
+python infer.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
 ```
 *   **Outputs**:
     1.  `infer_results.txt`: Summary of metrics.
