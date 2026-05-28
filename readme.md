@@ -18,15 +18,6 @@ We propose a novel plug-in module that can be integrated into common backbones (
 ## 🚀 Objective: Domain-Specific Fine-Grained Recognition
 The primary goal of this project is to verify the generalizability and feature extraction capabilities of the PIM model across diverse fine-grained domains by independently fine-tuning from a flagship pre-trained backbone.
 
-**Independent Fine-Tuning Pipeline:**
-```text
-          ImageNet-22K Pretraining (Swin-Large Backbone)
-            ↙                   ↓                   ↘
-    CUB-200-2011          FGVC-Aircraft          Stanford Cars
-   (200 classes)          (100 classes)          (196 classes)
-         ↓                      ↓                      ↓
-   [best.pt eval]         [best.pt eval]         [best.pt eval]
-```
 
 ---
 
