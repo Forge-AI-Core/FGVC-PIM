@@ -2,11 +2,11 @@
 Project: Bogonet-ConvNV1, Experiment: Bogonet-ConvNV1-005-large-crops_0pct
 Samples: 3369
 
-    layer1-top-1 75.245%
+    layer1-top-1 75.304%
     layer1-top-3 100.0%
-    layer2-top-1 75.215%
+    layer2-top-1 75.364%
     layer2-top-3 100.0%
-    layer3-top-1 75.156%
+    layer3-top-1 75.186%
     layer3-top-3 100.0%
     layer4-top-1 75.096%
     layer4-top-3 100.0%
@@ -14,16 +14,16 @@ Samples: 3369
     combiner-top-3 100.0%
 
 [Overall Performance]
-    Precision: 73.92%
-    Recall: 70.89%
-    F1-Score: 72.154%
+    Precision: 73.762%
+    Recall: 70.663%
+    F1-Score: 71.978%
 
 [Per-Class Performance (Combiner)]
   - Class 'cut':
-    ACC: 84.468% | Precision: 79.7% | Recall: 84.468% | F1-Score: 82.014%
+    ACC: 85.346% | Precision: 79.014% | Recall: 85.346% | F1-Score: 82.058%
   - Class 'danger':
-    ACC: 68.061% | Precision: 68.41% | Recall: 68.061% | F1-Score: 68.235%
+    ACC: 66.327% | Precision: 70.119% | Recall: 66.327% | F1-Score: 68.17%
   - Class 'excluded':
-    ACC: 60.141% | Precision: 73.65% | Recall: 60.141% | F1-Score: 66.214%
+    ACC: 60.317% | Precision: 72.152% | Recall: 60.317% | F1-Score: 65.706%
 
 BEST_ACC: combiner-top-1 75.601% 

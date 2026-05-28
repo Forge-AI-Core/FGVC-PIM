@@ -18,15 +18,6 @@ We propose a novel plug-in module that can be integrated into common backbones (
 ## 🚀 Objective: Domain-Specific Fine-Grained Recognition
 The primary goal of this project is to verify the generalizability and feature extraction capabilities of the PIM model across diverse fine-grained domains by independently fine-tuning from a flagship pre-trained backbone.
 
-**Independent Fine-Tuning Pipeline:**
-```text
-          ImageNet-22K Pretraining (Swin-Large Backbone)
-            ↙                   ↓                   ↘
-    CUB-200-2011          FGVC-Aircraft          Stanford Cars
-   (200 classes)          (100 classes)          (196 classes)
-         ↓                      ↓                      ↓
-   [best.pt eval]         [best.pt eval]         [best.pt eval]
-```
 
 ---
 
@@ -116,19 +107,7 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 ### Option A: Quick Accuracy Check (via `main.py`)
 ```zsh
 # CUB-200-2011 (Swin-T)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT_Pre.yaml
-
-# CUB-200-2011 (ConvNeXt-L)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1_Pre.yaml
-
-# FGVC-Aircraft (Swin-T)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT_Pre.yaml
-
-# FGVC-Aircraft (ConvNeXt-L)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_ConvNV1_Pre.yaml
-
-# Stanford Cars
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT_Pre.yaml
+time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Public-Benchmark/CUB200_SwinT_Pre.yaml
 
 # Bogonet (ConvNeXt-L)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
@@ -139,19 +118,7 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 ### Option B: Detailed Analysis (via `infer.py`)
 ```zsh
 # CUB-200-2011 (Swin-T) Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/CUB200_SwinT_Pre.yaml
-
-# CUB-200-2011 (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/CUB200_ConvNV1_Pre.yaml
-
-# FGVC-Aircraft (Swin-T) Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/Aircraft_SwinT_Pre.yaml
-
-# FGVC-Aircraft (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/Aircraft_ConvNV1_Pre.yaml
-
-# Stanford Cars Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/Cars_SwinT_Pre.yaml
+python infer.py --c ./configs/Public-Benchmark/CUB200_SwinT_Pre.yaml
 
 # Bogonet (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
@@ -174,19 +141,8 @@ python infer.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
 Generate Grad-CAM heatmaps to see where the model is looking.
 ```zsh
 # CUB-200-2011 (Swin-T) Heatmap
-python heat.py --c ./configs/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
+python heat.py --c ./configs/Public-Benchmark/CUB200_SwinT_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
 
-# CUB-200-2011 (ConvNeXt-L) Heatmap
-python heat.py --c ./configs/CUB200_ConvNV1_Pre.yaml --img ./vis/001.jpg --save_img ./vis/001/
-
-# FGVC-Aircraft (Swin-T) Heatmap
-python heat.py --c ./configs/Aircraft_SwinT_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
-
-# FGVC-Aircraft (ConvNeXt-L) Heatmap
-python heat.py --c ./configs/Aircraft_ConvNV1_Pre.yaml --img ./vis/aircraft_sample.jpg --save_img ./vis/aircraft_out/
-
-# Stanford Cars Heatmap
-python heat.py --c ./configs/Cars_SwinT_Pre.yaml --img ./vis/car_sample.jpg --save_img ./vis/car_out/
 ```
 
 ### Examples:

@@ -1,13 +1,13 @@
-project_name: Bogonet-ConvNV1
-exp_name: Bogonet-ConvNV1-002-small
+project_name: Bogonet-SwinT
+exp_name: Bogonet-SwinT-002-base-crops_10pct
 use_wandb: False
 wandb_entity: account
-train_root: ./classification_split/crops_25pct_split/train/
-val_root: ./classification_split/crops_25pct_split/test/
-data_size: 256
+train_root: ./classification_split/crops_10pct_split/train/
+val_root: ./classification_split/crops_10pct_split/test/
+data_size: 384
 num_workers: 8
 batch_size: 16
-model_name: convnext
+model_name: swin-t
 pretrained: ~
 optimizer: SGD
 max_lr: 0.0005
@@ -16,7 +16,7 @@ max_epochs: 30
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
-fpn_size: 768
+fpn_size: 1536
 use_selection: True
 num_classes: 3
 num_selects: 
@@ -31,4 +31,4 @@ lambda_n: 5.0
 lambda_c: 1.0
 update_freq: 1
 log_freq: 100
-eval_freq: 3
+eval_freq: 5
