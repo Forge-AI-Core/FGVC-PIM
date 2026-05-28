@@ -2,7 +2,7 @@ project_name: Bogonet-SwinT
 exp_name: Bogonet-SwinT-003-base-crops_0pct
 use_wandb: False
 wandb_entity: account
-train_root: ~ 
+train_root: ./classification_split/crops_0pct_split/train
 val_root: ./classification_split/crops_0pct_split/test/
 data_size: 384
 num_workers: 8
