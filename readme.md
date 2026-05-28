@@ -1,7 +1,6 @@
 # A Novel Plug-in Module for Fine-grained Visual Classification
 
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/a-novel-plug-in-module-for-fine-grained-1/fine-grained-image-classification-on-cub-200)](https://paperswithcode.com/sota/fine-grained-image-classification-on-cub-200?p=a-novel-plug-in-module-for-fine-grained-1)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/a-novel-plug-in-module-for-fine-grained-1/fine-grained-image-classification-on-nabirds)](https://paperswithcode.com/sota/fine-grained-image-classification-on-nabirds?p=a-novel-plug-in-module-for-fine-grained-1)
+
 
 **Paper URL**: [https://arxiv.org/abs/2202.03822](https://arxiv.org/abs/2202.03822)  
 **Original Repository**: [chou141253/FGVC-PIM](https://github.com/chou141253/FGVC-PIM)
@@ -41,33 +40,6 @@ source .venv/bin/activate
 *   **CUB-200-2011**: [Download Link](https://drive.google.com/drive/folders/15brdvEQZMWW2CJVEZ70Bx28ULaGwfaIr)
 *   **FGVC-Aircraft**: [Download Link](https://drive.google.com/drive/folders/1iKTP2H-Tb8sanzqHcEKPhYe3YtfcjbN6)
 *   **Stanford Cars**: [Download Link](https://drive.google.com/drive/folders/1fnB_L1fnx3kTugqt2DkqdeX06K2XZCIu)
-
-#### 📥 Download Pretrained Weights
-*   **CUB-200-2011 Pretrained (Swin-T)**: Place the weight file at `pretrained/cub200/best.pt`.
-*   **CUB-200-2011 Pretrained (ConvNeXt-L)**: Place the weight file at `pretrained/cub200/convN/best.pt`.
-*   **FGVC-Aircraft Pretrained (Swin-T)**: Place the weight file at `pretrained/aircraft/best.pt`.
-*   **FGVC-Aircraft Pretrained (ConvNeXt-L)**: Place the weight file at `pretrained/aircraft/convN/best.pt`.
-*   **Stanford Cars Pretrained**: Place the weight file at `pretrained/cars/best.pt`.
-
-### 1.3. Data Preprocessing (FGVC-Aircraft)
-Unlike CUB-200, the raw FGVC-Aircraft dataset packages all 10,000 images into a single flat folder alongside CSV annotation files. To make it compatible with PyTorch's standard `ImageFolder` structure (class-specific subfolders), follow these steps:
-
-1. Extract the downloaded archive so that the folder resides at `./datas/fgvc-aircraft-2013b/`.
-2. Run the automated parsing script:
-```zsh
-python preprocess/prep_aircraft.py
-```
-*This script automatically splits and organizes the images into `./datas/FGVC-Aircraft/train/`, `val/`, and `test/` subdirectories based on their 100 variant classes. Once completed successfully, you can safely delete the raw `fgvc-aircraft-2013b` folder to free up storage space.*
-
-### 1.4. Data Preprocessing (Stanford Cars)
-The raw Stanford Cars dataset distributes images in flat directories (`cars_train` and `cars_test`) and requires parsing MATLAB `.mat` structure arrays to map images to their 196 specific model variants. To properly format the directories:
-
-1. Ensure the dataset folder resides at `./datas/Stanford-Cars/` containing `cars_train/`, `cars_test/`, and `devkit/`.
-2. Run the automated matrix parsing and folder formatting script:
-```zsh
-python preprocess/prep_cars.py
-```
-*This script copies the corrected test annotations containing ground truth labels, extracts bounding box metadata, and seamlessly arranges images into class subdirectories (`001` to `196`) under `./datas/Stanford-Cars/train/` and `test/`.*
 
 ---
 
@@ -172,49 +144,5 @@ Eval  | ACC: 88.456% (88.456%) | Precision: 88.200% | Recall: 88.400% | F1-Score
 - **Eval ACC (left)**: best eval accuracy so far (basis for saving best.pt)
 - **Eval ACC (right, in parentheses)**: current epoch combiner-top-1 accuracy
 - All metrics: macro-averaged via sklearn
-
----
-
-## 🍏 Training on macOS (Apple Silicon)
-
-Training fine-grained models natively on macOS is fully supported using PyTorch's MPS (Metal Performance Shaders) backend. To ensure stability and avoid common system limits during hours-long training runs, use the tailored configuration file and command setup:
-
-### Key macOS Constraints & Config Solutions
-- **Multiprocessing Bottleneck**: macOS limits process spawning (`fork`), causing deadlocks with standard data loading. Set `num_workers: 0` in your YAML config.
-- **Unified Memory Optimization**: Scale down the physical batch size to fit safely inside Mac Unified Memory (e.g., `batch_size: 4`), while increasing `update_freq: 8` (gradient accumulation) to preserve an effective batch size of 32.
-- **Preventing Sleep Disruptions**: Long runs on Mac can be unexpectedly paused by system sleep or screensavers. Prefix the execution command with `caffeinate -ids`.
-
-### macOS Execution Command
-```zsh
-caffeinate -ids time python main.py --c ./configs/Aircraft_SwinT_Mac.yaml
-```
-
----
-
-## 🔧 Modifications from Original
-
-The following changes have been made from the [original repository](https://github.com/chou141253/FGVC-PIM):
-
-| Area | Change |
-| :--- | :--- |
-| **best.pt criterion** | Changed from `highest-5` (average of all layer outputs) to `combiner-top-1` (single forward pass — the actual deployable metric) |
-| **Eval metrics** | Added macro Precision / Recall / F1-Score via `sklearn` (combiner output) |
-| **Train metrics** | Added per-epoch macro Precision / Recall / F1-Score accumulated across batches |
-| **Metric graphs** | `save_metrics_plots()` saves `train_metrics.png` and `eval_metrics.png` at end of training |
-| **eval.py — `select_` / `drop_` removed** | Removed top-k accuracy computation for `select_*` / `drop_*` outputs inside `evaluate()`. These were a major bottleneck — processing up to 32,768 samples per batch (S=2048 tokens). |
-| **eval.py — `_average_top_k_result` removed** | Removed `_average_top_k_result` call from `evaluate()` (Python loop bottleneck). `highest-1` ~ `highest-5` metrics are no longer computed. Removed from terminal output and graphs as well. |
-| **Multi-device support** | Added `get_device()` util — auto-detects CUDA, Apple MPS, and CPU |
-| **FGVC-Aircraft config** | Added `configs/Aircraft_SwinT.yaml` for 100-class aircraft fine-tuning |
-| **ConvNeXt-Tiny config** | Added `configs/CUB200_ConvNV1.yaml` for CUB-200-2011 ConvNeXt-Tiny fine-tuning |
-| **ConvNeXt-Tiny config (Aircraft)** | Added `configs/Aircraft_ConvNV1.yaml` for FGVC-Aircraft ConvNeXt-Tiny fine-tuning |
-
----
-
-## 🛠️ Custom Model Support
-
-You can integrate the PIM module into your own custom backbones:
-
-- **Model Builder**: Refer to [`models/builder.py`](./models/builder.py) to see how different backbones (Swin-T, ResNet, etc.) are registered and constructed.
-- **Tutorial**: For a step-by-step guide on building your own PIM-enabled model, check out the [**`how_to_build_pim_model.ipynb`**](./how_to_build_pim_model.ipynb) notebook.
 
 ---
