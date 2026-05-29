@@ -1,0 +1,29 @@
+[Evaluation Results]
+Project: Bogonet-ConvN-S, Experiment: Bogonet-ConvNV1-002-small-crops_10pct
+Samples: 3369
+
+    layer1-top-1 77.026%
+    layer1-top-3 100.0%
+    layer2-top-1 77.085%
+    layer2-top-3 100.0%
+    layer3-top-1 76.996%
+    layer3-top-3 100.0%
+    layer4-top-1 76.937%
+    layer4-top-3 100.0%
+    combiner-top-1 76.759%
+    combiner-top-3 100.0%
+
+[Overall Performance]
+    Precision: 75.152%
+    Recall: 72.109%
+    F1-Score: 73.407%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 85.62% | Precision: 80.0% | Recall: 85.62% | F1-Score: 82.715%
+  - Class 'danger':
+    ACC: 68.98% | Precision: 71.459% | Recall: 68.98% | F1-Score: 70.197%
+  - Class 'excluded':
+    ACC: 61.728% | Precision: 73.996% | Recall: 61.728% | F1-Score: 67.308%
+
+BEST_ACC: layer2-top-1 77.085% 
