@@ -48,22 +48,7 @@ source .venv/bin/activate
 #### Training
 If you want to train the models from scratch:
 ```zsh
-# CUB-200-2011 Training (Swin-T)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_SwinT.yaml
-
-# CUB-200-2011 Training (ConvNeXt-L)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/CUB200_ConvNV1.yaml
-
-# FGVC-Aircraft Training (Swin-T)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_SwinT.yaml
-
-# FGVC-Aircraft Training (ConvNeXt-L)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Aircraft_ConvNV1.yaml
-
-# Stanford Cars Training
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Cars_SwinT.yaml
-
-# Bogonet Training (ConvNeXt-L)
+# Bogonet Training (ConvNeXt)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Bogonet_ConvNV1.yaml
 ```
 - **Configuration**: Modify YAML files in `./configs/`.

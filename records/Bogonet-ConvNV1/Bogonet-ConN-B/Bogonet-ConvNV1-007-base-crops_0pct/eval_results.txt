@@ -1,0 +1,29 @@
+[Evaluation Results]
+Project: Bogonet-ConvNV1, Experiment: Bogonet-ConvNV1-007-base-crops_0pct
+Samples: 3369
+
+    layer1-top-1 75.304%
+    layer1-top-3 100.0%
+    layer2-top-1 75.156%
+    layer2-top-3 100.0%
+    layer3-top-1 75.186%
+    layer3-top-3 100.0%
+    layer4-top-1 75.304%
+    layer4-top-3 100.0%
+    combiner-top-1 75.542%
+    combiner-top-3 100.0%
+
+[Overall Performance]
+    Precision: 73.613%
+    Recall: 70.992%
+    F1-Score: 72.127%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 85.346% | Precision: 78.734% | Recall: 85.346% | F1-Score: 81.907%
+  - Class 'danger':
+    ACC: 64.49% | Precision: 70.932% | Recall: 64.49% | F1-Score: 67.557%
+  - Class 'excluded':
+    ACC: 63.139% | Precision: 71.173% | Recall: 63.139% | F1-Score: 66.916%
+
+BEST_ACC: combiner-top-1 75.542% 
