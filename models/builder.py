@@ -319,6 +319,48 @@ def build_swintransformer(pretrained: bool = True,
                                    comb_proj_size = comb_proj_size)
 
 
+def build_swin_base(pretrained: bool = True,
+                    num_selects: Union[dict, None] = None, 
+                    img_size: int = 384,
+                    use_fpn: bool = True,
+                    fpn_size: int = 512,
+                    proj_type: str = "Linear",
+                    upsample_type: str = "Conv",
+                    use_selection: bool = True,
+                    num_classes: int = 200,
+                    use_combiner: bool = True,
+                    comb_proj_size: Union[int, None] = None):
+    """
+    Building Swin Transformer Base model.
+    """
+    import timm
+
+    if num_selects is None:
+        num_selects = {
+            'layer1':32,
+            'layer2':32,
+            'layer3':32,
+            'layer4':32
+        }
+
+    backbone = timm.create_model('swin_base_patch4_window12_384_in22k', pretrained=pretrained)
+    backbone.train()
+    
+    print("Building Swin-Base...")
+    return pim_module.PluginMoodel(backbone = backbone,
+                                   return_nodes = None,
+                                   img_size = img_size,
+                                   use_fpn = use_fpn,
+                                   fpn_size = fpn_size,
+                                   proj_type = proj_type,
+                                   upsample_type = upsample_type,
+                                   use_selection = use_selection,
+                                   num_classes = num_classes,
+                                   num_selects = num_selects, 
+                                   use_combiner = num_selects,
+                                   comb_proj_size = comb_proj_size)
+
+
 
 
 if __name__ == "__main__":
@@ -352,7 +394,9 @@ if __name__ == "__main__":
 MODEL_GETTER = {
     "resnet50":build_resnet50,
     "swin-t":build_swintransformer,
+    "swin-b":build_swin_base,
     "vit":build_vit16,
     "efficient":build_efficientnet,
     "convnext": build_convnext,
 }
+
