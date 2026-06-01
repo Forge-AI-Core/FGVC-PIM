@@ -1,0 +1,29 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-Hyper, Experiment: Bogonet-SwinT-B-Hyper-002-crops_25pct
+Samples: 3369
+
+    layer1-top-1 81.359%
+    layer1-top-3 100.0%
+    layer2-top-1 81.3%
+    layer2-top-3 100.0%
+    layer3-top-1 81.3%
+    layer3-top-3 100.0%
+    layer4-top-1 81.33%
+    layer4-top-3 100.0%
+    combiner-top-1 81.3%
+    combiner-top-3 100.0%
+
+[Overall Performance]
+    Precision: 80.631%
+    Recall: 77.028%
+    F1-Score: 78.562%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 89.297% | Precision: 83.137% | Recall: 89.297% | F1-Score: 86.107%
+  - Class 'danger':
+    ACC: 74.592% | Precision: 77.519% | Recall: 74.592% | F1-Score: 76.027%
+  - Class 'excluded':
+    ACC: 67.196% | Precision: 81.237% | Recall: 67.196% | F1-Score: 73.552%
+
+BEST_ACC: layer1-top-1 81.359% 
