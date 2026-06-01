@@ -1,0 +1,29 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-B, Experiment: Bogonet-SwinT-B-004-squareAdamDrop-crops_25pct
+Samples: 3369
+
+    layer1-top-1 81.567%
+    layer1-top-3 100.0%
+    layer2-top-1 81.627%
+    layer2-top-3 100.0%
+    layer3-top-1 81.656%
+    layer3-top-3 100.0%
+    layer4-top-1 81.627%
+    layer4-top-3 100.0%
+    combiner-top-1 81.656%
+    combiner-top-3 100.0%
+
+[Overall Performance]
+    Precision: 81.861%
+    Recall: 77.425%
+    F1-Score: 79.249%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 89.078% | Precision: 82.428% | Recall: 89.078% | F1-Score: 85.624%
+  - Class 'danger':
+    ACC: 76.531% | Precision: 78.782% | Recall: 76.531% | F1-Score: 77.64%
+  - Class 'excluded':
+    ACC: 66.667% | Precision: 84.375% | Recall: 66.667% | F1-Score: 74.483%
+
+BEST_ACC: combiner-top-1 81.656% 
