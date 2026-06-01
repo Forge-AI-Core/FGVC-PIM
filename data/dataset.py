@@ -13,7 +13,7 @@ class SquarePad:
         hp = int((max_wh - w) / 2)
         vp = int((max_wh - h) / 2)
         padding = (hp, vp, max_wh - w - hp, max_wh - h - vp)
-        return TF.pad(image, padding, 0, 'constant')
+        return TF.pad(image, padding, [124, 116, 104], 'constant')
 
 def build_loader(args):
     train_set, train_loader = None, None
