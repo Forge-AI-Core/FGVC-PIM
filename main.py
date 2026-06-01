@@ -79,6 +79,14 @@ def set_environment(args, tlogger):
 
     # model = torch.nn.DataParallel(model, device_ids=None) # device_ids : None --> use all gpus.
     model.to(args.device)
+    
+    # Freeze Swin backbone Stage 1 & 2 (patch_embed, layers.0, layers.1)
+    if "swin" in args.model_name.lower():
+        tlogger.print("Freezing Swin backbone Stage 1 & 2 (patch_embed, layers.0, layers.1)...")
+        for name, param in model.named_parameters():
+            if any(x in name for x in ["backbone.patch_embed", "backbone.layers.0", "backbone.layers.1"]):
+                param.requires_grad = False
+                
     tlogger.print()
     
     """
