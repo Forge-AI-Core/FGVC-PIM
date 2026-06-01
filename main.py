@@ -89,7 +89,7 @@ def set_environment(args, tlogger):
     if args.optimizer == "SGD":
         optimizer = torch.optim.SGD(model.parameters(), lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
     elif args.optimizer == "AdamW":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr, weight_decay=args.wdecay)
 
     if args.pretrained is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
