@@ -86,10 +86,23 @@ def set_environment(args, tlogger):
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
+    # Split params: backbone vs head (fpn, selector, combiner)
+    backbone_params = list(model.backbone.parameters()) if hasattr(model, 'backbone') else []
+    backbone_ids = set(id(p) for p in backbone_params)
+    head_params = [p for p in model.parameters() if id(p) not in backbone_ids]
+
+    head_lr = getattr(args, 'head_lr', args.max_lr)
+    head_scale = head_lr / args.max_lr  # relative to backbone schedule
+
+    param_groups = [
+        {"params": backbone_params, "lr_scale": 1.0},
+        {"params": head_params, "lr_scale": head_scale},
+    ]
+
     if args.optimizer == "SGD":
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
+        optimizer = torch.optim.SGD(param_groups, lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
     elif args.optimizer == "AdamW":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr, weight_decay=args.wdecay)
+        optimizer = torch.optim.AdamW(param_groups, lr=args.max_lr, weight_decay=args.wdecay)
 
     if args.pretrained is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])

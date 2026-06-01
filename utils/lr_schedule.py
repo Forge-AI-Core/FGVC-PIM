@@ -26,4 +26,5 @@ def get_lr(optimizer):
 
 def adjust_lr(iteration, optimizer, schedule):
     for param_group in optimizer.param_groups:
-        param_group["lr"] = schedule[iteration]
+        scale = param_group.get("lr_scale", 1.0)
+        param_group["lr"] = schedule[iteration] * scale
