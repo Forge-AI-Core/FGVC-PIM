@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-B
-exp_name: Bogonet-SwinT-B-003-squareAdam-crops_25pct
+exp_name: Bogonet-SwinT-B-004-squareAdamDrop-crops_25pct
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train
