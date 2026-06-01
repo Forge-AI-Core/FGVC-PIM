@@ -394,6 +394,7 @@ if __name__ == "__main__":
 MODEL_GETTER = {
     "resnet50":build_resnet50,
     "swin-t":build_swintransformer,
+    "swin-l":build_swintransformer,
     "swin-b":build_swin_base,
     "vit":build_vit16,
     "efficient":build_efficientnet,

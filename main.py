@@ -86,23 +86,10 @@ def set_environment(args, tlogger):
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
-    # Split params: backbone vs head (fpn, selector, combiner)
-    backbone_params = list(model.backbone.parameters()) if hasattr(model, 'backbone') else []
-    backbone_ids = set(id(p) for p in backbone_params)
-    head_params = [p for p in model.parameters() if id(p) not in backbone_ids]
-
-    head_lr = getattr(args, 'head_lr', args.max_lr)
-    head_scale = head_lr / args.max_lr  # relative to backbone schedule
-
-    param_groups = [
-        {"params": backbone_params, "lr_scale": 1.0},
-        {"params": head_params, "lr_scale": head_scale},
-    ]
-
     if args.optimizer == "SGD":
-        optimizer = torch.optim.SGD(param_groups, lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
     elif args.optimizer == "AdamW":
-        optimizer = torch.optim.AdamW(param_groups, lr=args.max_lr, weight_decay=args.wdecay)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr, weight_decay=args.wdecay)
 
     if args.pretrained is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
@@ -169,7 +156,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     if args.lambda_s != 0:
                         S = outs[name].size(1)
                         logit = outs[name].view(-1, args.num_classes).contiguous()
-                        loss_s = nn.CrossEntropyLoss(label_smoothing=getattr(args, 'label_smoothing', 0.0))(logit, 
+                        loss_s = nn.CrossEntropyLoss()(logit, 
                                                        labels.unsqueeze(1).repeat(1, S).flatten(0))
                         loss += args.lambda_s * loss_s
                     else:
@@ -195,7 +182,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         raise ValueError("FPN not use here.")
                     if args.lambda_b != 0:
                         ### here using 'layer1'~'layer4' is default setting, you can change to your own
-                        loss_b = nn.CrossEntropyLoss(label_smoothing=getattr(args, 'label_smoothing', 0.0))(outs[name].mean(1), labels)
+                        loss_b = nn.CrossEntropyLoss()(outs[name].mean(1), labels)
                         loss += args.lambda_b * loss_b
                     else:
                         loss_b = 0.0
@@ -205,7 +192,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         raise ValueError("Combiner not use here.")
 
                     if args.lambda_c != 0:
-                        loss_c = nn.CrossEntropyLoss(label_smoothing=getattr(args, 'label_smoothing', 0.0))(outs[name], labels)
+                        loss_c = nn.CrossEntropyLoss()(outs[name], labels)
                         loss += args.lambda_c * loss_c
                     # combiner 기준 예측값 누적 (Precision/Recall/F1용)
                     with torch.no_grad():
@@ -214,7 +201,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         all_train_labels.extend(labels.cpu().tolist())
 
                 elif "ori_out" in name:
-                    loss_ori = F.cross_entropy(outs[name], labels, label_smoothing=getattr(args, 'label_smoothing', 0.0))
+                    loss_ori = F.cross_entropy(outs[name], labels)
                     loss += loss_ori
             
             loss /= args.update_freq
