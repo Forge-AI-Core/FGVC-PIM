@@ -1,9 +1,9 @@
 project_name: Bogonet-SwinT
-exp_name: Bogonet-SwinT-003-base-crops_0pct
+exp_name: Bogonet-SwinT-L-001-crops_25pct
 use_wandb: False
 wandb_entity: account
-train_root: ./classification_split/crops_0pct_split/train
-val_root: ./classification_split/crops_0pct_split/test/
+train_root: ./classification_split/crops_25pct_split/train/
+val_root: ./classification_split/crops_25pct_split/test/
 data_size: 384
 num_workers: 8
 batch_size: 16
