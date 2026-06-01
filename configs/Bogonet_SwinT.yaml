@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-B
-exp_name: Bogonet-SwinT-B-002-square-crops_25pct
+exp_name: Bogonet-SwinT-B-003-squareAdam-crops_25pct
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train
@@ -9,10 +9,10 @@ num_workers: 8
 batch_size: 16
 model_name: swin-b
 pretrained: ~
-optimizer: SGD
-max_lr: 0.0005   
-wdecay: 0.0005   
-max_epochs: 30
+optimizer: AdamW
+max_lr: 0.0001  
+wdecay: 0.05
+max_epochs: 35
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
