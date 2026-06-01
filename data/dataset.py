@@ -3,17 +3,17 @@ import cv2
 import torch
 import torchvision.transforms as transforms
 from PIL import Image
-# import torchvision.transforms.functional as TF
-# import numpy as np
-# 
-# class SquarePad:
-#     def __call__(self, image):
-#         w, h = image.size
-#         max_wh = np.max([w, h])
-#         hp = int((max_wh - w) / 2)
-#         vp = int((max_wh - h) / 2)
-#         padding = (hp, vp, max_wh - w - hp, max_wh - h - vp)
-#         return TF.pad(image, padding, [124, 116, 104], 'constant')
+import torchvision.transforms.functional as TF
+import numpy as np
+
+class SquarePad:
+    def __call__(self, image):
+        w, h = image.size
+        max_wh = np.max([w, h])
+        hp = int((max_wh - w) / 2)
+        vp = int((max_wh - h) / 2)
+        padding = (hp, vp, max_wh - w - hp, max_wh - h - vp)
+        return TF.pad(image, padding, [124, 116, 104], 'constant')
 
 def build_loader(args):
     train_set, train_loader = None, None
@@ -67,7 +67,7 @@ class ImageDataset(torch.utils.data.Dataset):
         resize_size = int(data_size * 1.33)
         if istrain:
             self.transforms = transforms.Compose([
-                        # SquarePad(),
+                        SquarePad(),
                         # transforms.Resize((data_size, data_size), Image.BILINEAR),
                         transforms.Resize((resize_size, resize_size), Image.BILINEAR),
                         transforms.RandomCrop((data_size, data_size)),
@@ -79,7 +79,7 @@ class ImageDataset(torch.utils.data.Dataset):
                 ])
         else:
             self.transforms = transforms.Compose([
-                        # SquarePad(),
+                        SquarePad(),
                         # transforms.Resize((data_size, data_size), Image.BILINEAR),
                         transforms.Resize((resize_size, resize_size), Image.BILINEAR),
                         transforms.CenterCrop((data_size, data_size)),
