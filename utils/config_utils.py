@@ -47,6 +47,7 @@ def get_args(with_deepspeed: bool=False):
     parser.add_argument("--optimizer", default="", type=str, help='["SGD", "AdamW"]')
     parser.add_argument("--max_lr", default=0.0003, type=float)
     parser.add_argument("--wdecay", default=0.0005, type=float)
+    parser.add_argument("--drop_path_rate", default=0.0, type=float)
     
     parser.add_argument("--max_epochs", default=50, type=int)
     parser.add_argument("--warmup_batchs", default=0, type=int)

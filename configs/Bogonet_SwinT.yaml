@@ -11,7 +11,8 @@ model_name: swin-b
 pretrained: ~
 optimizer: AdamW
 max_lr: 0.0001  
-wdecay: 0.05
+wdecay: 0.1
+drop_path_rate: 0.2
 max_epochs: 35
 warmup_batchs: 800
 use_amp: True
