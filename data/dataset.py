@@ -60,10 +60,14 @@ class ImageDataset(torch.utils.data.Dataset):
                         transforms.Resize((resize_size, resize_size), Image.BILINEAR),
                         transforms.RandomCrop((data_size, data_size)),
                         transforms.RandomHorizontalFlip(),
+                        transforms.RandomRotation(degrees=15),
+                        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+                        transforms.RandAugment(num_ops=2, magnitude=9),
                         transforms.RandomApply([transforms.GaussianBlur(kernel_size=(5, 5), sigma=(0.1, 5))], p=0.1),
                         transforms.RandomAdjustSharpness(sharpness_factor=1.5, p=0.1),
                         transforms.ToTensor(),
-                        normalize
+                        normalize,
+                        transforms.RandomErasing(p=0.2, scale=(0.02, 0.33), ratio=(0.3, 3.3))
                 ])
         else:
             self.transforms = transforms.Compose([
