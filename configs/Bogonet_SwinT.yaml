@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-Hyper
-exp_name: Bogonet-SwinT-B-Hyper-001-crops_25pct
+exp_name: Bogonet-SwinT-B-Hyper-002-crops_25pct
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train
@@ -11,7 +11,7 @@ model_name: swin-b
 pretrained: ~
 optimizer: AdamW
 max_lr: 0.0001
-wdecay: 0.05
+wdecay: 0.1
 max_epochs: 30
 warmup_batchs: 800
 use_amp: True
@@ -29,6 +29,6 @@ lambda_b: 0.5
 lambda_s: 0.0
 lambda_n: 5.0
 lambda_c: 1.0
-update_freq: 1
+update_freq: 2
 log_freq: 100
 eval_freq: 5
