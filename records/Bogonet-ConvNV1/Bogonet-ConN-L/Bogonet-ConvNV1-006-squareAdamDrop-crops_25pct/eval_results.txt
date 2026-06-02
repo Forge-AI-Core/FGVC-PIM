@@ -1,0 +1,29 @@
+[Evaluation Results]
+Project: Bogonet-ConvNV1, Experiment: Bogonet-ConvNV1-006-squareAdamDrop-crops_25pct
+Samples: 3369
+
+    layer1-top-1 81.092%
+    layer1-top-3 100.0%
+    layer2-top-1 81.122%
+    layer2-top-3 100.0%
+    layer3-top-1 81.122%
+    layer3-top-3 100.0%
+    layer4-top-1 81.211%
+    layer4-top-3 100.0%
+    combiner-top-1 80.974%
+    combiner-top-3 100.0%
+
+[Overall Performance]
+    Precision: 81.482%
+    Recall: 76.224%
+    F1-Score: 78.319%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 89.846% | Precision: 81.85% | Recall: 89.846% | F1-Score: 85.662%
+  - Class 'danger':
+    ACC: 73.571% | Precision: 76.948% | Recall: 73.571% | F1-Score: 75.222%
+  - Class 'excluded':
+    ACC: 65.256% | Precision: 85.648% | Recall: 65.256% | F1-Score: 74.074%
+
+BEST_ACC: layer4-top-1 81.211% 
