@@ -1,0 +1,29 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-B, Experiment: Bogonet-SwinT-B-001-base-crops_25pct
+Samples: 3369
+
+    layer1-top-1 81.063%
+    layer1-top-3 100.0%
+    layer2-top-1 80.974%
+    layer2-top-3 100.0%
+    layer3-top-1 80.914%
+    layer3-top-3 100.0%
+    layer4-top-1 80.914%
+    layer4-top-3 100.0%
+    combiner-top-1 80.944%
+    combiner-top-3 100.0%
+
+[Overall Performance]
+    Precision: 80.274%
+    Recall: 77.194%
+    F1-Score: 78.547%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 88.419% | Precision: 82.615% | Recall: 88.419% | F1-Score: 85.419%
+  - Class 'danger':
+    ACC: 73.673% | Precision: 77.634% | Recall: 73.673% | F1-Score: 75.602%
+  - Class 'excluded':
+    ACC: 69.489% | Precision: 80.573% | Recall: 69.489% | F1-Score: 74.621%
+
+BEST_ACC: layer1-top-1 81.063% 

@@ -157,7 +157,8 @@ def build_convnext(pretrained: bool = True,
                    use_selection: bool = True,
                    num_classes: int = 200,
                    use_combiner: bool = True,
-                   comb_proj_size: Union[int, None] = None):
+                   comb_proj_size: Union[int, None] = None,
+                   drop_path_rate: float = 0.0):
 
     import timm
 
@@ -180,7 +181,7 @@ def build_convnext(pretrained: bool = True,
     else:
         backbone_name = 'convnext_large_in22k'
 
-    backbone = timm.create_model(backbone_name, pretrained=pretrained)
+    backbone = timm.create_model(backbone_name, pretrained=pretrained, drop_path_rate=drop_path_rate)
     backbone.train()
 
     return pim_module.PluginMoodel(backbone=backbone,
@@ -279,7 +280,8 @@ def build_swintransformer(pretrained: bool = True,
                           use_selection: bool = True,
                           num_classes: int = 200,
                           use_combiner: bool = True,
-                          comb_proj_size: Union[int, None] = None):
+                          comb_proj_size: Union[int, None] = None,
+                          drop_path_rate: float = 0.0):
     """
     This function is to building swin transformer. timm swin-transformer + torch.fx.proxy.Proxy 
     could cause error, so we set return_nodes to None and change swin-transformer model script to
@@ -298,7 +300,7 @@ def build_swintransformer(pretrained: bool = True,
             'layer4':32
         }
 
-    backbone = timm.create_model('swin_large_patch4_window12_384_in22k', pretrained=pretrained)
+    backbone = timm.create_model('swin_large_patch4_window12_384_in22k', pretrained=pretrained, drop_path_rate=drop_path_rate)
 
     # print(backbone)
     # print(get_graph_node_names(backbone))
@@ -329,7 +331,8 @@ def build_swin_base(pretrained: bool = True,
                     use_selection: bool = True,
                     num_classes: int = 200,
                     use_combiner: bool = True,
-                    comb_proj_size: Union[int, None] = None):
+                    comb_proj_size: Union[int, None] = None,
+                    drop_path_rate: float = 0.0):
     """
     Building Swin Transformer Base model.
     """
@@ -343,7 +346,7 @@ def build_swin_base(pretrained: bool = True,
             'layer4':32
         }
 
-    backbone = timm.create_model('swin_base_patch4_window12_384_in22k', pretrained=pretrained)
+    backbone = timm.create_model('swin_base_patch4_window12_384_in22k', pretrained=pretrained, drop_path_rate=drop_path_rate)
     backbone.train()
     
     print("Building Swin-Base...")
@@ -394,6 +397,7 @@ if __name__ == "__main__":
 MODEL_GETTER = {
     "resnet50":build_resnet50,
     "swin-t":build_swintransformer,
+    "swin-l":build_swintransformer,
     "swin-b":build_swin_base,
     "vit":build_vit16,
     "efficient":build_efficientnet,

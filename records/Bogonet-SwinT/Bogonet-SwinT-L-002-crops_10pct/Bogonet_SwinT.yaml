@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT
-exp_name: Bogonet-SwinT-002-base-crops_10pct
+exp_name: Bogonet-SwinT-L-002-crops_10pct
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_10pct_split/train/

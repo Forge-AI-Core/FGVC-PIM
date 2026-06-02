@@ -1,5 +1,5 @@
-project_name: Bogonet-SwinT
-exp_name: Bogonet-SwinT-L-004-squareAdamDrop-crops_25pct
+project_name: Bogonet-SwinT-B
+exp_name: Bogonet-SwinT-B-005-squareAdamDropFreeze-crops_25pct
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train
@@ -7,17 +7,17 @@ val_root: ./classification_split/crops_25pct_split/test/
 data_size: 384
 num_workers: 8
 batch_size: 16
-model_name: swin-l
+model_name: swin-b
 pretrained: ~
 optimizer: AdamW
-max_lr: 0.00005
+max_lr: 0.00008
 wdecay: 0.1
-drop_path_rate: 0.3
+drop_path_rate: 0.2
 max_epochs: 40
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
-fpn_size: 1536
+fpn_size: 1024
 use_selection: True
 num_classes: 3
 num_selects: 

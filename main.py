@@ -56,14 +56,20 @@ def set_environment(args, tlogger):
 
     ### = = = =  Model = = = =  
     tlogger.print("Building Model....")
-    model = MODEL_GETTER[args.model_name](
-        use_fpn = args.use_fpn,
-        fpn_size = args.fpn_size,
-        use_selection = args.use_selection,
-        num_classes = args.num_classes,
-        num_selects = args.num_selects,
-        use_combiner = args.use_combiner,
-    ) # about return_nodes, we use our default setting
+    kwargs = {
+        "use_fpn": args.use_fpn,
+        "fpn_size": args.fpn_size,
+        "use_selection": args.use_selection,
+        "num_classes": args.num_classes,
+        "num_selects": args.num_selects,
+        "use_combiner": args.use_combiner,
+    }
+    
+    import inspect
+    if "drop_path_rate" in inspect.signature(MODEL_GETTER[args.model_name]).parameters:
+        kwargs["drop_path_rate"] = args.drop_path_rate
+        
+    model = MODEL_GETTER[args.model_name](**kwargs) # about return_nodes, we use our default setting
     if args.pretrained is not None:
         checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'), weights_only=False)
         model.load_state_dict(checkpoint['model'])
@@ -73,6 +79,9 @@ def set_environment(args, tlogger):
 
     # model = torch.nn.DataParallel(model, device_ids=None) # device_ids : None --> use all gpus.
     model.to(args.device)
+    
+    
+                
     tlogger.print()
     
     """
@@ -89,7 +98,7 @@ def set_environment(args, tlogger):
     if args.optimizer == "SGD":
         optimizer = torch.optim.SGD(model.parameters(), lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
     elif args.optimizer == "AdamW":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr, weight_decay=args.wdecay)
 
     if args.pretrained is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
