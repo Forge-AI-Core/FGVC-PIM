@@ -128,6 +128,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
     progress_i = 0
     all_train_preds = []
     all_train_labels = []
+    all_train_scores = []
     for batch_id, (ids, datas, labels) in enumerate(train_loader):
         model.train()
         """ = = = = adjust learning rate = = = = """
@@ -208,10 +209,19 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         preds = torch.argmax(outs[name], dim=1).cpu().tolist()
                         all_train_preds.extend(preds)
                         all_train_labels.extend(labels.cpu().tolist())
+                        probs = torch.softmax(outs[name], dim=1).cpu().tolist()
+                        all_train_scores.extend(probs)
 
                 elif "ori_out" in name:
                     loss_ori = F.cross_entropy(outs[name], labels)
                     loss += loss_ori
+                    if not args.use_combiner:
+                        with torch.no_grad():
+                            preds = torch.argmax(outs[name], dim=1).cpu().tolist()
+                            all_train_preds.extend(preds)
+                            all_train_labels.extend(labels.cpu().tolist())
+                            probs = torch.softmax(outs[name], dim=1).cpu().tolist()
+                            all_train_scores.extend(probs)
             
             loss /= args.update_freq
         
@@ -245,7 +255,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
             print(".."+str(int(show_progress[progress_i] * 100)) + "%", end='', flush=True)
             progress_i += 1
 
-    return all_train_preds, all_train_labels
+    return all_train_preds, all_train_labels, all_train_scores
 
 
 def main(args, tlogger):
@@ -256,11 +266,31 @@ def main(args, tlogger):
     train_loader, val_loader, model, optimizer, schedule, scaler, amp_context, start_epoch = set_environment(args, tlogger)
 
     best_acc = 0.0
+    best_danger_pr_auc = 0.0
     best_eval_name = "null"
 
+    # Find danger class index
+    danger_idx = -1
+    try:
+        import os
+        dataset_root = train_loader.dataset.root if train_loader is not None else val_loader.dataset.root
+        class_names = [f for f in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, f))]
+        class_names.sort()
+        for idx, name in enumerate(class_names):
+            if name.lower() == "danger":
+                danger_idx = idx
+                break
+        if danger_idx == -1:
+            for idx, name in enumerate(class_names):
+                if "danger" in name.lower():
+                    danger_idx = idx
+                    break
+    except Exception:
+        pass
+
     # 그래프용 지표 누적
-    train_history = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": []}
-    eval_history  = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": []}
+    train_history = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": [], "danger_pr_auc": []}
+    eval_history  = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": [], "danger_pr_auc": []}
 
     if args.use_wandb:
         wandb.init(entity=args.wandb_entity,
@@ -268,6 +298,7 @@ def main(args, tlogger):
                    name=args.exp_name,
                    config=args)
         wandb.run.summary["best_acc"] = best_acc
+        wandb.run.summary["best_danger_pr_auc"] = best_danger_pr_auc
         wandb.run.summary["best_eval_name"] = best_eval_name
         wandb.run.summary["best_epoch"] = 0
 
@@ -278,23 +309,36 @@ def main(args, tlogger):
         """
         if train_loader is not None:
             tlogger.print("Start Training {} Epoch".format(epoch+1))
-            all_train_preds, all_train_labels = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
+            all_train_preds, all_train_labels, all_train_scores = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
             # Train 에포크 끝 - combiner 기준 Precision/Recall/F1 계산
             if len(all_train_preds) > 0:
                 train_prec, train_rec, train_f1, _ = precision_recall_fscore_support(
                     all_train_labels, all_train_preds, average='macro', zero_division=0)
                 train_combiner_acc = round(
                     100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
-                tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                
+                # Calculate train Danger PR AUC
+                train_danger_pr_auc = 0.0
+                if danger_idx != -1 and len(all_train_scores) > 0:
+                    from sklearn.metrics import precision_recall_curve, auc
+                    y_true_train = [1 if label == danger_idx else 0 for label in all_train_labels]
+                    y_scores_train = [score[danger_idx] for score in all_train_scores]
+                    if sum(y_true_train) > 0 and sum(y_true_train) < len(y_true_train):
+                        precision_vals_tr, recall_vals_tr, _ = precision_recall_curve(y_true_train, y_scores_train)
+                        train_danger_pr_auc = round(auc(recall_vals_tr, precision_vals_tr) * 100, 3)
+                
+                tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}% | Danger PR AUC: {}%".format(
                     train_combiner_acc,
                     round(train_prec * 100, 3),
                     round(train_rec * 100, 3),
-                    round(train_f1 * 100, 3)))
+                    round(train_f1 * 100, 3),
+                    train_danger_pr_auc))
                 train_history["epoch"].append(epoch + 1)
                 train_history["acc"].append(train_combiner_acc)
                 train_history["precision"].append(round(train_prec * 100, 3))
                 train_history["recall"].append(round(train_rec * 100, 3))
                 train_history["f1"].append(round(train_f1 * 100, 3))
+                train_history["danger_pr_auc"].append(train_danger_pr_auc)
             tlogger.print()
         else:
             from eval import eval_and_save
@@ -319,24 +363,38 @@ def main(args, tlogger):
                 rec = accs.get("Recall", 0)
                 f1 = accs.get("F1-Score", 0)
                 combiner_acc = accs.get("combiner-top-1", acc)
-                tlogger.print("....Eval | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
-                    max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
+                danger_pr_auc = accs.get("danger_PR_AUC", 0.0)
+                tlogger.print("....Eval | Danger PR AUC: {}% (Best: {}%) | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                    danger_pr_auc, max(danger_pr_auc, best_danger_pr_auc), max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
                 tlogger.print()
                 eval_history["epoch"].append(epoch + 1)
                 eval_history["acc"].append(combiner_acc)
                 eval_history["precision"].append(prec)
                 eval_history["recall"].append(rec)
                 eval_history["f1"].append(f1)
+                eval_history["danger_pr_auc"].append(danger_pr_auc)
 
             if args.use_wandb:
                 wandb.log(accs)
 
-            if combiner_acc > best_acc:
+            # Determine best model based on Danger class PR AUC (fallback to combiner_acc if danger class is not found)
+            is_best = False
+            if "danger_PR_AUC" in accs:
+                if danger_pr_auc > best_danger_pr_auc:
+                    best_danger_pr_auc = danger_pr_auc
+                    is_best = True
+            else:
+                if combiner_acc > best_acc:
+                    is_best = True
+
+            if is_best:
                 best_acc = combiner_acc
-                best_eval_name = "combiner-top-1"
+                best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
                 torch.save(checkpoint, args.save_dir + "backup/best.pt")
+                
             if args.use_wandb:
                 wandb.run.summary["best_acc"] = best_acc
+                wandb.run.summary["best_danger_pr_auc"] = best_danger_pr_auc
                 wandb.run.summary["best_eval_name"] = best_eval_name
                 wandb.run.summary["best_epoch"] = epoch + 1
 
@@ -363,6 +421,8 @@ def save_metrics_plots(args, train_history, eval_history):
         ax.plot(train_history["epoch"], train_history["precision"], marker='s', label='Precision', linewidth=2, linestyle='--')
         ax.plot(train_history["epoch"], train_history["recall"],    marker='^', label='Recall', linewidth=2, linestyle='--')
         ax.plot(train_history["epoch"], train_history["f1"],        marker='D', label='F1-Score', linewidth=2, linestyle=':')
+        if "danger_pr_auc" in train_history and len(train_history["danger_pr_auc"]) > 0:
+            ax.plot(train_history["epoch"], train_history["danger_pr_auc"], marker='v', label='Danger PR AUC', linewidth=2, linestyle='-.')
         ax.set_xlabel('Epoch', fontsize=13)
         ax.set_ylabel('Score (%)', fontsize=13)
         ax.set_title('Train Metrics - {}/{}'.format(args.project_name, args.exp_name), fontsize=14)
@@ -380,6 +440,8 @@ def save_metrics_plots(args, train_history, eval_history):
         ax.plot(eval_history["epoch"], eval_history["precision"], marker='s', label='Precision', linewidth=2, linestyle='--')
         ax.plot(eval_history["epoch"], eval_history["recall"],    marker='^', label='Recall', linewidth=2, linestyle='--')
         ax.plot(eval_history["epoch"], eval_history["f1"],        marker='D', label='F1-Score', linewidth=2, linestyle=':')
+        if "danger_pr_auc" in eval_history and len(eval_history["danger_pr_auc"]) > 0:
+            ax.plot(eval_history["epoch"], eval_history["danger_pr_auc"], marker='v', label='Danger PR AUC', linewidth=2, linestyle='-.')
         ax.set_xlabel('Epoch', fontsize=13)
         ax.set_ylabel('Score (%)', fontsize=13)
         ax.set_title('Eval Metrics - {}/{}'.format(args.project_name, args.exp_name), fontsize=14)
