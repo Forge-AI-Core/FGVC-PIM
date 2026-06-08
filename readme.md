@@ -34,12 +34,6 @@ source .venv/bin/activate
 > [!NOTE]
 > **macOS Support**: This project is optimized for **Inference only** on macOS (Apple Silicon). Training is recommended on NVIDIA GPU environments for stability and performance.
 
-### 1.2. Datasets & Pretrained Models
-
-**Datasets:**
-*   **CUB-200-2011**: [Download Link](https://drive.google.com/drive/folders/15brdvEQZMWW2CJVEZ70Bx28ULaGwfaIr)
-*   **FGVC-Aircraft**: [Download Link](https://drive.google.com/drive/folders/1iKTP2H-Tb8sanzqHcEKPhYe3YtfcjbN6)
-*   **Stanford Cars**: [Download Link](https://drive.google.com/drive/folders/1fnB_L1fnx3kTugqt2DkqdeX06K2XZCIu)
 
 ---
 
@@ -63,8 +57,6 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 
 ### Option A: Quick Accuracy Check (via `main.py`)
 ```zsh
-# CUB-200-2011 (Swin-T)
-time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Public-Benchmark/CUB200_SwinT_Pre.yaml
 
 # Bogonet (ConvNeXt-L)
 time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
@@ -74,9 +66,6 @@ time TORCH_HOME=/workspace/projects/FGVC-PIM/.cache python main.py --c ./configs
 
 ### Option B: Detailed Analysis (via `infer.py`)
 ```zsh
-# CUB-200-2011 (Swin-T) Detailed Scoring & Excel/Confusion Matrix
-python infer.py --c ./configs/Public-Benchmark/CUB200_SwinT_Pre.yaml
-
 # Bogonet (ConvNeXt-L) Detailed Scoring & Excel/Confusion Matrix
 python infer.py --c ./configs/Bogonet_ConvNV1_Pre.yaml
 ```

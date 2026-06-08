@@ -33,3 +33,4 @@ lambda_c: 1.0
 update_freq: 1
 log_freq: 100
 eval_freq: 2
+target_danger_precision: 0.90

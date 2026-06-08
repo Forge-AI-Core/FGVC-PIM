@@ -303,19 +303,20 @@ def evaluate(args, model, test_loader, plot_pr_curve: bool = False):
                     danger_pr_auc = auc(recall_vals, precision_vals)
                     danger_ap = average_precision_score(y_true, y_scores)
                     
-                    # Find threshold for >= 90% Precision with maximum Recall
-                    target_precision = 0.90
+                    # Find threshold for >= target_precision % Precision with maximum Recall
+                    target_precision = getattr(args, "target_danger_precision", 0.90)
+                    pct = int(round(target_precision * 100))
                     valid_indices = [i for i, p in enumerate(precision_vals[:-1]) if p >= target_precision]
                     if len(valid_indices) > 0:
                         best_idx = max(valid_indices, key=lambda idx: recall_vals[idx])
                         opt_threshold = float(thresholds[best_idx])
                         opt_recall = float(recall_vals[best_idx] * 100)
                         
-                        eval_acces["danger_threshold_for_90_precision"] = round(opt_threshold, 4)
-                        eval_acces["danger_recall_at_90_precision"] = round(opt_recall, 3)
+                        eval_acces[f"danger_threshold_for_{pct}_precision"] = round(opt_threshold, 4)
+                        eval_acces[f"danger_recall_at_{pct}_precision"] = round(opt_recall, 3)
                     else:
-                        eval_acces["danger_threshold_for_90_precision"] = "N/A"
-                        eval_acces["danger_recall_at_90_precision"] = 0.0
+                        eval_acces[f"danger_threshold_for_{pct}_precision"] = "N/A"
+                        eval_acces[f"danger_recall_at_{pct}_precision"] = 0.0
 
                     if plot_pr_curve:
                         plt.figure(figsize=(8, 6))
@@ -453,10 +454,16 @@ def eval_and_save(args, model, val_loader, tlogger):
     tlogger.print("Start Evaluating")
     acc, eval_name, eval_acces = evaluate(args, model, val_loader, plot_pr_curve=True)
     tlogger.print("....BEST_ACC: {} {}%".format(eval_name, acc))
-    if "danger_threshold_for_90_precision" in eval_acces:
-        tlogger.print("....[Danger Class Target Precision >= 90%]")
-        tlogger.print("    Recommended Threshold: {}".format(eval_acces["danger_threshold_for_90_precision"]))
-        tlogger.print("    Recall at this Threshold: {}%".format(eval_acces.get("danger_recall_at_90_precision", 0.0)))
+    
+    target_precision = getattr(args, "target_danger_precision", 0.90)
+    pct = int(round(target_precision * 100))
+    thresh_key = f"danger_threshold_for_{pct}_precision"
+    recall_key = f"danger_recall_at_{pct}_precision"
+    
+    if thresh_key in eval_acces:
+        tlogger.print(f"....[Danger Class Target Precision >= {pct}%]")
+        tlogger.print("    Recommended Threshold: {}".format(eval_acces[thresh_key]))
+        tlogger.print("    Recall at this Threshold: {}%".format(eval_acces.get(recall_key, 0.0)))
     
     ### build records.txt
     msg = "[Evaluation Results]\n"
@@ -466,7 +473,7 @@ def eval_and_save(args, model, val_loader, tlogger):
     
     # 1. 일반 레이어 성능 출력
     for name in eval_acces:
-        if not name.startswith("class_") and name not in ["Precision", "Recall", "F1-Score", "danger_threshold_for_90_precision", "danger_recall_at_90_precision"]:
+        if not name.startswith("class_") and name not in ["Precision", "Recall", "F1-Score", thresh_key, recall_key]:
             msg += "    {} {}%\n".format(name, eval_acces[name])
     msg += "\n"
     
@@ -497,10 +504,10 @@ def eval_and_save(args, model, val_loader, tlogger):
             )
         msg += "\n"
     
-    if "danger_threshold_for_90_precision" in eval_acces:
-        msg += "[Danger Class Target Precision >= 90%]\n"
-        msg += "    Recommended Threshold: {}\n".format(eval_acces["danger_threshold_for_90_precision"])
-        msg += "    Recall at this Threshold: {}%\n".format(eval_acces.get("danger_recall_at_90_precision", 0.0))
+    if thresh_key in eval_acces:
+        msg += f"[Danger Class Target Precision >= {pct}%]\n"
+        msg += "    Recommended Threshold: {}\n".format(eval_acces[thresh_key])
+        msg += "    Recall at this Threshold: {}%\n".format(eval_acces.get(recall_key, 0.0))
         msg += "\n"
         
     msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
