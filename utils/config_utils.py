@@ -71,6 +71,7 @@ def get_args(with_deepspeed: bool=False):
     parser.add_argument("--lambda_c", default=1.0, type=float)
 
     parser.add_argument("--use_wandb", default=True, type=bool)
+    parser.add_argument("--target_danger_precision", default=0.90, type=float)
 
     if with_deepspeed:
         import deepspeed
