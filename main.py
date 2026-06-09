@@ -242,9 +242,12 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
         """ = = = = update model = = = = """
         if (batch_id + 1) % args.update_freq == 0:
             if args.use_amp:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
                 scaler.update() # next batch
             else:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 optimizer.step()
             optimizer.zero_grad()
 

@@ -14,6 +14,10 @@ class BatchHardTripletLoss(nn.Module):
         # embeddings: [B, D]
         # labels: [B]
         
+        orig_dtype = embeddings.dtype
+        # Cast to float32 for numerical stability in distance calculations and sqrt
+        embeddings = embeddings.float()
+        
         # L2 normalize the embeddings to stabilize training and bound pairwise distances to [0, 2]
         embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
         
@@ -22,7 +26,7 @@ class BatchHardTripletLoss(nn.Module):
         square_norm = torch.diag(dot_product)
         distances = square_norm.unsqueeze(0) - 2.0 * dot_product + square_norm.unsqueeze(1)
         distances = torch.clamp(distances, min=0.0)
-        distances = torch.sqrt(distances + 1e-16) # numerical stability
+        distances = torch.sqrt(distances + 1e-8) # numerical stability
 
         # 2. Get mask for positive and negative pairs
         labels_equal = torch.eq(labels.unsqueeze(0), labels.unsqueeze(1))
@@ -33,16 +37,16 @@ class BatchHardTripletLoss(nn.Module):
         
         # Mask for anchor-negative: different labels
         mask_an = ~labels_equal
-
+ 
         # 3. For each anchor, find the hardest positive (maximum distance)
         ap_distances = distances * mask_ap.float()
         hardest_positive_dist, _ = torch.max(ap_distances, dim=1)
-
+ 
         # 4. For each anchor, find the hardest negative (minimum distance)
         max_dist = torch.max(distances)
         an_distances = distances + max_dist * (~mask_an).float()
         hardest_negative_dist, _ = torch.min(an_distances, dim=1)
-
+ 
         # 5. Compute triplet loss for hard triplets
         losses = hardest_positive_dist - hardest_negative_dist + self.margin
         losses = torch.clamp(losses, min=0.0)
@@ -50,6 +54,6 @@ class BatchHardTripletLoss(nn.Module):
         # Only average over triplets where we have valid positive and negative samples
         valid_triplets = (mask_ap.sum(dim=1) > 0) & (mask_an.sum(dim=1) > 0)
         if valid_triplets.sum() == 0:
-            return torch.tensor(0.0, device=embeddings.device, requires_grad=True)
+            return torch.tensor(0.0, device=embeddings.device, dtype=orig_dtype, requires_grad=True)
             
-        return losses[valid_triplets].mean()
+        return losses[valid_triplets].mean().to(orig_dtype)
