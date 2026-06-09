@@ -14,6 +14,9 @@ class BatchHardTripletLoss(nn.Module):
         # embeddings: [B, D]
         # labels: [B]
         
+        # L2 normalize the embeddings to stabilize training and bound pairwise distances to [0, 2]
+        embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+        
         # 1. Compute pairwise distance matrix (B x B)
         dot_product = torch.matmul(embeddings, embeddings.t())
         square_norm = torch.diag(dot_product)
