@@ -26,6 +26,13 @@ class BatchHardTripletLoss(nn.Module):
         square_norm = torch.diag(dot_product)
         distances = square_norm.unsqueeze(0) - 2.0 * dot_product + square_norm.unsqueeze(1)
         distances = torch.clamp(distances, min=0.0)
+        
+        # Prevent self-distance (diagonal elements) from being 0.0, which causes NaN gradients in sqrt.
+        # Since self-distances are masked out in mask_ap and mask_an anyway, changing them to a non-zero value
+        # does not affect the final loss but prevents NaN gradients.
+        eye_mask = torch.eye(distances.size(0), device=distances.device)
+        distances = distances + eye_mask * 1.0
+        
         distances = torch.sqrt(distances + 1e-8) # numerical stability
 
         # 2. Get mask for positive and negative pairs
