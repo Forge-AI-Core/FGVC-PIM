@@ -34,7 +34,7 @@ class GCNCombiner(nn.Module):
                 elif len(name) == 3:
                     in_size = inputs[name].size(2)
                 else:
-                    raise ValusError("The size of output dimension of previous must be 3 or 4.")
+                    raise ValueError("The size of output dimension of previous must be 3 or 4.")
                 m = nn.Sequential(
                     nn.Linear(in_size, proj_size),
                     nn.ReLU(),
@@ -92,9 +92,9 @@ class GCNCombiner(nn.Module):
         hs = self.param_pool1(hs)
         hs = self.dropout(hs)
         hs = hs.flatten(1)
-        hs = self.classifier(hs)
+        logits = self.classifier(hs)
 
-        return hs
+        return logits, hs
 
 class WeaklySelector(nn.Module):
 
@@ -338,7 +338,7 @@ class PluginMoodel(nn.Module):
                 elif len(fs_size) == 4:
                     out_size = fs_size.size(1)
                 else:
-                    raise ValusError("The size of output dimension of previous must be 3 or 4.")
+                    raise ValueError("The size of output dimension of previous must be 3 or 4.")
             self.classifier = nn.Linear(out_size, num_classes)
 
         ### = = = = = FPN = = = = =
@@ -411,8 +411,9 @@ class PluginMoodel(nn.Module):
             selects = self.selector(x, logits)
 
         if self.use_combiner:
-            comb_outs = self.combiner(selects)
+            comb_outs, comb_embs = self.combiner(selects)
             logits['comb_outs'] = comb_outs
+            logits['comb_embs'] = comb_embs
             return logits
         
         if self.use_selection or self.fpn:

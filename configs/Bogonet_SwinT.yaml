@@ -2,8 +2,8 @@ project_name: Bogonet-SwinT-PR
 exp_name: Bogonet-SwinT-B-001-PR
 use_wandb: False
 wandb_entity: account
-train_root: ../classification_split_combined/train
-val_root: ../classification_split_combined/test/
+train_root: ./classification_split/crops_25pct_split/train/
+val_root: ./classification_split/crops_25pct_split/test/
 data_size: 384
 num_workers: 8
 batch_size: 16
@@ -34,3 +34,6 @@ update_freq: 1
 log_freq: 100
 eval_freq: 2
 target_danger_precision: 0.90
+use_triplet: True
+lambda_triplet: 1.0
+triplet_margin: 0.3
