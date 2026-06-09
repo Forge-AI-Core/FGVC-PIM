@@ -35,5 +35,5 @@ log_freq: 100
 eval_freq: 5
 target_danger_precision: 0.90
 use_triplet: True
-lambda_triplet: 0.1
+lambda_triplet: 0.2
 triplet_margin: 0.3
