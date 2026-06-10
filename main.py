@@ -17,6 +17,26 @@ from utils.device_utils import get_device
 
 warnings.simplefilter("ignore")
 
+def safe_save(checkpoint, path):
+    import tempfile
+    import shutil
+    import os
+    temp_dir = tempfile.gettempdir()
+    temp_path = os.path.join(temp_dir, os.path.basename(path))
+    try:
+        torch.save(checkpoint, temp_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        shutil.move(temp_path, path)
+    except Exception as e:
+        print(f"[Warning] Failed to save checkpoint to local temp: {e}. Attempting direct save.")
+        torch.save(checkpoint, path)
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
 def eval_freq_schedule(args, epoch: int):
     if epoch >= args.max_epochs * 0.95:
         args.eval_freq = 1
@@ -372,7 +392,7 @@ def main(args, tlogger):
 
         model_to_save = model.module if hasattr(model, "module") else model
         checkpoint = {"model": model_to_save.state_dict(), "optimizer": optimizer.state_dict(), "epoch":epoch}
-        torch.save(checkpoint, args.save_dir + "backup/last.pt")
+        safe_save(checkpoint, args.save_dir + "backup/last.pt")
 
         if (epoch + 1) % args.eval_freq == 0:
             """
@@ -413,7 +433,7 @@ def main(args, tlogger):
             if is_best:
                 best_acc = combiner_acc
                 best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
-                torch.save(checkpoint, args.save_dir + "backup/best.pt")
+                safe_save(checkpoint, args.save_dir + "backup/best.pt")
                 
             if args.use_wandb:
                 wandb.run.summary["best_acc"] = best_acc
