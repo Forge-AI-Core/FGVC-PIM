@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-PR
-exp_name: Bogonet-SwinT-B-004-Triplet-warmup
+exp_name: Bogonet-SwinT-B-003-orgbatch-Triplet
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train/
@@ -37,4 +37,3 @@ target_danger_precision: 0.90
 use_triplet: True
 lambda_triplet: 0.2
 triplet_margin: 0.3
-triplet_warmup_epochs: 10

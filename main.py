@@ -122,6 +122,10 @@ def set_environment(args, tlogger):
 
 def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader):
 
+    if getattr(args, "use_triplet", False):
+        from utils.loss_utils import BatchHardTripletLoss
+        triplet_loss_fn = BatchHardTripletLoss(margin=getattr(args, "triplet_margin", 0.3))
+
     optimizer.zero_grad()
     total_batchs = len(train_loader) # just for log
     show_progress = [x/10 for x in range(11)] # just for log
@@ -223,6 +227,16 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                             probs = torch.softmax(outs[name], dim=1).cpu().tolist()
                             all_train_scores.extend(probs)
             
+            if getattr(args, "use_triplet", False) and "comb_embs" in outs:
+                warmup_epochs = getattr(args, "triplet_warmup_epochs", 10)
+                base_lambda = getattr(args, "lambda_triplet", 1.0)
+                if warmup_epochs > 0 and epoch < warmup_epochs:
+                    current_lambda = base_lambda * (epoch / warmup_epochs)
+                else:
+                    current_lambda = base_lambda
+                loss_triplet = triplet_loss_fn(outs["comb_embs"], labels)
+                loss += current_lambda * loss_triplet
+
             loss /= args.update_freq
         
         """ = = = = calculate gradient = = = = """
@@ -234,9 +248,12 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
         """ = = = = update model = = = = """
         if (batch_id + 1) % args.update_freq == 0:
             if args.use_amp:
+                scaler.unscale_(optimizer)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 scaler.step(optimizer)
                 scaler.update() # next batch
             else:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                 optimizer.step()
             optimizer.zero_grad()
 

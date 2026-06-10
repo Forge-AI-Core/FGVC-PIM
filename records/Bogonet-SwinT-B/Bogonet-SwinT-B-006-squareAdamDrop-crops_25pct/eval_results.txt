@@ -12,6 +12,8 @@ Samples: 3369
     layer4-top-3 100.0%
     combiner-top-1 82.428%
     combiner-top-3 100.0%
+    danger_PR_AUC 83.94%
+    danger_AP 83.95%
 
 [Overall Performance]
     Precision: 82.535%
@@ -25,5 +27,9 @@ Samples: 3369
     ACC: 76.735% | Precision: 78.743% | Recall: 76.735% | F1-Score: 77.726%
   - Class 'excluded':
     ACC: 69.665% | Precision: 85.313% | Recall: 69.665% | F1-Score: 76.699%
+
+[Danger Class Target Precision >= 90%]
+    Recommended Threshold: 0.9995
+    Recall at this Threshold: 43.265%
 
 BEST_ACC: combiner-top-1 82.428% 

@@ -1,0 +1,35 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-PR, Experiment: Bogonet-SwinT-B-004-Triplet-warmup
+Samples: 3369
+
+    layer1-top-1 80.766%
+    layer1-top-3 100.0%
+    layer2-top-1 80.825%
+    layer2-top-3 100.0%
+    layer3-top-1 80.647%
+    layer3-top-3 100.0%
+    layer4-top-1 80.647%
+    layer4-top-3 100.0%
+    combiner-top-1 80.795%
+    combiner-top-3 100.0%
+    danger_PR_AUC 83.567%
+    danger_AP 83.549%
+
+[Overall Performance]
+    Precision: 80.852%
+    Recall: 76.684%
+    F1-Score: 78.404%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 88.31% | Precision: 82.302% | Recall: 88.31% | F1-Score: 85.2%
+  - Class 'danger':
+    ACC: 74.898% | Precision: 76.22% | Recall: 74.898% | F1-Score: 75.553%
+  - Class 'excluded':
+    ACC: 66.843% | Precision: 84.035% | Recall: 66.843% | F1-Score: 74.46%
+
+[Danger Class Target Precision >= 90%]
+    Recommended Threshold: 0.9999
+    Recall at this Threshold: 50.714%
+
+BEST_ACC: layer2-top-1 80.825% 
