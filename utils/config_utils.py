@@ -75,6 +75,7 @@ def get_args(with_deepspeed: bool=False):
     parser.add_argument("--use_triplet", default=False, type=bool)
     parser.add_argument("--lambda_triplet", default=1.0, type=float)
     parser.add_argument("--triplet_margin", default=0.3, type=float)
+    parser.add_argument("--triplet_warmup_epochs", default=10, type=int)
 
     if with_deepspeed:
         import deepspeed

@@ -228,8 +228,14 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                             all_train_scores.extend(probs)
             
             if getattr(args, "use_triplet", False) and "comb_embs" in outs:
+                warmup_epochs = getattr(args, "triplet_warmup_epochs", 10)
+                base_lambda = getattr(args, "lambda_triplet", 1.0)
+                if warmup_epochs > 0 and epoch < warmup_epochs:
+                    current_lambda = base_lambda * (epoch / warmup_epochs)
+                else:
+                    current_lambda = base_lambda
                 loss_triplet = triplet_loss_fn(outs["comb_embs"], labels)
-                loss += getattr(args, "lambda_triplet", 1.0) * loss_triplet
+                loss += current_lambda * loss_triplet
 
             loss /= args.update_freq
         
