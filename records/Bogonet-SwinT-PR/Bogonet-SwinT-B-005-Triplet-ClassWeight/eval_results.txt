@@ -2,34 +2,34 @@
 Project: Bogonet-SwinT-PR, Experiment: Bogonet-SwinT-B-005-Triplet-ClassWeight
 Samples: 3369
 
-    layer1-top-1 81.27%
+    layer1-top-1 81.775%
     layer1-top-3 100.0%
-    layer2-top-1 81.181%
+    layer2-top-1 81.805%
     layer2-top-3 100.0%
-    layer3-top-1 81.389%
+    layer3-top-1 81.864%
     layer3-top-3 100.0%
-    layer4-top-1 81.359%
+    layer4-top-1 81.656%
     layer4-top-3 100.0%
-    combiner-top-1 81.33%
+    combiner-top-1 81.775%
     combiner-top-3 100.0%
-    danger_PR_AUC 82.864%
-    danger_AP 82.879%
+    danger_PR_AUC 84.634%
+    danger_AP 84.647%
 
 [Overall Performance]
-    Precision: 81.553%
-    Recall: 77.17%
-    F1-Score: 78.962%
+    Precision: 81.242%
+    Recall: 78.859%
+    F1-Score: 79.891%
 
 [Per-Class Performance (Combiner)]
   - Class 'cut':
-    ACC: 88.749% | Precision: 82.584% | Recall: 88.749% | F1-Score: 85.556%
+    ACC: 86.883% | Precision: 84.472% | Recall: 86.883% | F1-Score: 85.66%
   - Class 'danger':
-    ACC: 75.918% | Precision: 77.098% | Recall: 75.918% | F1-Score: 76.504%
+    ACC: 78.265% | Precision: 76.091% | Recall: 78.265% | F1-Score: 77.163%
   - Class 'excluded':
-    ACC: 66.843% | Precision: 84.978% | Recall: 66.843% | F1-Score: 74.827%
+    ACC: 71.429% | Precision: 83.162% | Recall: 71.429% | F1-Score: 76.85%
 
 [Danger Class Target Precision >= 90%]
-    Recommended Threshold: 0.9994
-    Recall at this Threshold: 50.816%
+    Recommended Threshold: 0.9997
+    Recall at this Threshold: 51.429%
 
-BEST_ACC: layer3-top-1 81.389% 
+BEST_ACC: layer3-top-1 81.864% 
