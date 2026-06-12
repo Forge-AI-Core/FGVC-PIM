@@ -17,6 +17,26 @@ from utils.device_utils import get_device
 
 warnings.simplefilter("ignore")
 
+def safe_save(checkpoint, path):
+    import tempfile
+    import shutil
+    import os
+    temp_dir = tempfile.gettempdir()
+    temp_path = os.path.join(temp_dir, os.path.basename(path))
+    try:
+        torch.save(checkpoint, temp_path)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        shutil.move(temp_path, path)
+    except Exception as e:
+        print(f"[Warning] Failed to save checkpoint to local temp: {e}. Attempting direct save.")
+        torch.save(checkpoint, path)
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
 def eval_freq_schedule(args, epoch: int):
     if epoch >= args.max_epochs * 0.95:
         args.eval_freq = 1
@@ -126,6 +146,12 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
         from utils.loss_utils import BatchHardTripletLoss
         triplet_loss_fn = BatchHardTripletLoss(margin=getattr(args, "triplet_margin", 0.3))
 
+    # Load and allocate class weights if provided
+    class_weights = None
+    if getattr(args, "class_weights", None) is not None:
+        class_weights = torch.tensor(args.class_weights, dtype=torch.float, device=args.device)
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+
     optimizer.zero_grad()
     total_batchs = len(train_loader) # just for log
     show_progress = [x/10 for x in range(11)] # just for log
@@ -170,8 +196,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     if args.lambda_s != 0:
                         S = outs[name].size(1)
                         logit = outs[name].view(-1, args.num_classes).contiguous()
-                        loss_s = nn.CrossEntropyLoss()(logit, 
-                                                       labels.unsqueeze(1).repeat(1, S).flatten(0))
+                        loss_s = criterion(logit, 
+                                           labels.unsqueeze(1).repeat(1, S).flatten(0))
                         loss += args.lambda_s * loss_s
                     else:
                         loss_s = 0.0
@@ -196,7 +222,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         raise ValueError("FPN not use here.")
                     if args.lambda_b != 0:
                         ### here using 'layer1'~'layer4' is default setting, you can change to your own
-                        loss_b = nn.CrossEntropyLoss()(outs[name].mean(1), labels)
+                        loss_b = criterion(outs[name].mean(1), labels)
                         loss += args.lambda_b * loss_b
                     else:
                         loss_b = 0.0
@@ -206,7 +232,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         raise ValueError("Combiner not use here.")
 
                     if args.lambda_c != 0:
-                        loss_c = nn.CrossEntropyLoss()(outs[name], labels)
+                        loss_c = criterion(outs[name], labels)
                         loss += args.lambda_c * loss_c
                     # combiner 기준 예측값 누적 (Precision/Recall/F1용)
                     with torch.no_grad():
@@ -217,7 +243,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         all_train_scores.extend(probs)
 
                 elif "ori_out" in name:
-                    loss_ori = F.cross_entropy(outs[name], labels)
+                    loss_ori = criterion(outs[name], labels)
                     loss += loss_ori
                     if not args.use_combiner:
                         with torch.no_grad():
@@ -366,7 +392,7 @@ def main(args, tlogger):
 
         model_to_save = model.module if hasattr(model, "module") else model
         checkpoint = {"model": model_to_save.state_dict(), "optimizer": optimizer.state_dict(), "epoch":epoch}
-        torch.save(checkpoint, args.save_dir + "backup/last.pt")
+        safe_save(checkpoint, args.save_dir + "backup/last.pt")
 
         if (epoch + 1) % args.eval_freq == 0:
             """
@@ -407,7 +433,7 @@ def main(args, tlogger):
             if is_best:
                 best_acc = combiner_acc
                 best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
-                torch.save(checkpoint, args.save_dir + "backup/best.pt")
+                safe_save(checkpoint, args.save_dir + "backup/best.pt")
                 
             if args.use_wandb:
                 wandb.run.summary["best_acc"] = best_acc

@@ -1,0 +1,35 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-PR, Experiment: Bogonet-SwinT-B-005-Triplet-ClassWeight
+Samples: 3369
+
+    layer1-top-1 81.775%
+    layer1-top-3 100.0%
+    layer2-top-1 81.805%
+    layer2-top-3 100.0%
+    layer3-top-1 81.864%
+    layer3-top-3 100.0%
+    layer4-top-1 81.656%
+    layer4-top-3 100.0%
+    combiner-top-1 81.775%
+    combiner-top-3 100.0%
+    danger_PR_AUC 84.634%
+    danger_AP 84.647%
+
+[Overall Performance]
+    Precision: 81.242%
+    Recall: 78.859%
+    F1-Score: 79.891%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 86.883% | Precision: 84.472% | Recall: 86.883% | F1-Score: 85.66%
+  - Class 'danger':
+    ACC: 78.265% | Precision: 76.091% | Recall: 78.265% | F1-Score: 77.163%
+  - Class 'excluded':
+    ACC: 71.429% | Precision: 83.162% | Recall: 71.429% | F1-Score: 76.85%
+
+[Danger Class Target Precision >= 90%]
+    Recommended Threshold: 0.9997
+    Recall at this Threshold: 51.429%
+
+BEST_ACC: layer3-top-1 81.864% 
