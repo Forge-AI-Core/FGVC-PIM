@@ -501,7 +501,8 @@ def main(args, tlogger):
     save_metrics_plots(args, train_history, eval_history)
 
     # Save final eval results with the best model
-    if val_loader is not None and train_loader is not None:
+    stage = getattr(args, "train_stage", "joint")
+    if val_loader is not None and train_loader is not None and stage != "stage1":
         import os
         best_path = os.path.join(args.save_dir, "backup", "best.pt")
         if os.path.exists(best_path):
