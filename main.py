@@ -107,11 +107,11 @@ def set_environment(args, tlogger):
         print("    [Stage 1] Frozen all classifier parameters.")
     elif stage == "stage2":
         for name, param in model.named_parameters():
-            if "classifier" in name:
-                param.requires_grad = True
-            else:
+            if "backbone" in name:
                 param.requires_grad = False
-        print("    [Stage 2] Frozen all feature extraction layers. Only classifiers are trainable.")
+            else:
+                param.requires_grad = True
+        print("    [Stage 2] Frozen all backbone layers. FPN, Combiner, and classifiers are trainable.")
 
     # model = torch.nn.DataParallel(model, device_ids=None) # device_ids : None --> use all gpus.
     model.to(args.device)
