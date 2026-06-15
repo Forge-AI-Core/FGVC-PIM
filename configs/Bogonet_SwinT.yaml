@@ -12,8 +12,8 @@ pretrained: ~
 optimizer: AdamW
 max_lr: 0.00005
 wdecay: 0.15
-drop_path_rate: 0.4
-max_epochs: 10
+drop_path_rate: 0.5
+max_epochs: 30
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
