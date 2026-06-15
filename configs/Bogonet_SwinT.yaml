@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-PR
-exp_name: Bogonet-SwinT-B-008-SupCon
+exp_name: Bogonet-SwinT-B-009-SupCon
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train/
@@ -41,4 +41,3 @@ use_supcon: True
 lambda_supcon: 0.1
 supcon_temperature: 0.07
 train_stage: stage1
-
