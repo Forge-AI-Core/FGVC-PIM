@@ -517,40 +517,24 @@ def main(args, tlogger):
 
 
 def save_metrics_plots(args, train_history, eval_history):
-    stage = getattr(args, "train_stage", "joint")
-    if stage == "stage1":
-        """ Train Loss 그래프 """
-        if "loss" in train_history and len(train_history["loss"]) > 0:
-            fig, ax = plt.subplots(figsize=(12, 6))
-            ax.plot(train_history["epoch"], train_history["loss"], marker='o', color='royalblue', label='Train Loss', linewidth=2)
-            ax.set_xlabel('Epoch', fontsize=13)
-            ax.set_ylabel('Loss', fontsize=13)
-            ax.set_title('Train Representation Loss (Stage 1) - {}/{}'.format(args.project_name, args.exp_name), fontsize=14)
-            ax.set_xticks(train_history["epoch"])
-            ax.legend(fontsize=11)
-            ax.grid(True, alpha=0.3)
-            plt.tight_layout()
-            plt.savefig(args.save_dir + "train_loss.png", dpi=150)
-            plt.close()
-    else:
-        """ Train 그래프 """
-        if len(train_history["epoch"]) > 0:
-            fig, ax = plt.subplots(figsize=(12, 6))
-            ax.plot(train_history["epoch"], train_history["acc"],       marker='o', label='ACC (combiner-top-1)', linewidth=2)
-            ax.plot(train_history["epoch"], train_history["precision"], marker='s', label='Precision', linewidth=2, linestyle='--')
-            ax.plot(train_history["epoch"], train_history["recall"],    marker='^', label='Recall', linewidth=2, linestyle='--')
-            ax.plot(train_history["epoch"], train_history["f1"],        marker='D', label='F1-Score', linewidth=2, linestyle=':')
-            if "danger_pr_auc" in train_history and len(train_history["danger_pr_auc"]) > 0:
-                ax.plot(train_history["epoch"], train_history["danger_pr_auc"], marker='v', label='Danger PR AUC', linewidth=2, linestyle='-.')
-            ax.set_xlabel('Epoch', fontsize=13)
-            ax.set_ylabel('Score (%)', fontsize=13)
-            ax.set_title('Train Metrics - {}/{}'.format(args.project_name, args.exp_name), fontsize=14)
-            ax.set_xticks(train_history["epoch"])
-            ax.legend(fontsize=11)
-            ax.grid(True, alpha=0.3)
-            plt.tight_layout()
-            plt.savefig(args.save_dir + "train_metrics.png", dpi=150)
-            plt.close()
+    """ Train 그래프 """
+    if len(train_history["epoch"]) > 0:
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.plot(train_history["epoch"], train_history["acc"],       marker='o', label='ACC (combiner-top-1)', linewidth=2)
+        ax.plot(train_history["epoch"], train_history["precision"], marker='s', label='Precision', linewidth=2, linestyle='--')
+        ax.plot(train_history["epoch"], train_history["recall"],    marker='^', label='Recall', linewidth=2, linestyle='--')
+        ax.plot(train_history["epoch"], train_history["f1"],        marker='D', label='F1-Score', linewidth=2, linestyle=':')
+        if "danger_pr_auc" in train_history and len(train_history["danger_pr_auc"]) > 0:
+            ax.plot(train_history["epoch"], train_history["danger_pr_auc"], marker='v', label='Danger PR AUC', linewidth=2, linestyle='-.')
+        ax.set_xlabel('Epoch', fontsize=13)
+        ax.set_ylabel('Score (%)', fontsize=13)
+        ax.set_title('Train Metrics - {}/{}'.format(args.project_name, args.exp_name), fontsize=14)
+        ax.set_xticks(train_history["epoch"])
+        ax.legend(fontsize=11)
+        ax.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(args.save_dir + "train_metrics.png", dpi=150)
+        plt.close()
 
     """ Eval 그래프 """
     if len(eval_history["epoch"]) > 0:
