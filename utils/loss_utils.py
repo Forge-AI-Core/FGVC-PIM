@@ -64,3 +64,59 @@ class BatchHardTripletLoss(nn.Module):
             return torch.tensor(0.0, device=embeddings.device, dtype=orig_dtype, requires_grad=True)
             
         return losses[valid_triplets].mean().to(orig_dtype)
+
+
+class SupConLoss(nn.Module):
+    """
+    Supervised Contrastive Loss.
+    Proposed in: Supervised Contrastive Learning (Khosla et al., 2020).
+    Adapted for single-view feature embeddings.
+    """
+    def __init__(self, temperature: float = 0.07):
+        super(SupConLoss, self).__init__()
+        self.temperature = temperature
+
+    def forward(self, embeddings: torch.Tensor, labels: torch.Tensor) -> torch.Tensor:
+        # embeddings: [B, D]
+        # labels: [B]
+        orig_dtype = embeddings.dtype
+        embeddings = embeddings.float()
+        
+        # 1. L2 normalize the embeddings
+        embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+        
+        # 2. Compute similarity matrix (B x B)
+        similarity = torch.matmul(embeddings, embeddings.t()) / self.temperature
+        
+        # For numerical stability, subtract the max logit from each row
+        logits_max, _ = torch.max(similarity, dim=1, keepdim=True)
+        logits = similarity - logits_max.detach()
+        
+        # Mask out diagonal (self-contrast)
+        batch_size = embeddings.size(0)
+        logits_mask = torch.ones_like(logits) - torch.eye(batch_size, device=embeddings.device)
+        
+        # Positive mask: same labels, different indices
+        labels_equal = torch.eq(labels.unsqueeze(0), labels.unsqueeze(1))
+        mask_pos = labels_equal & logits_mask.bool()
+        
+        # We need at least one positive pair for an anchor to compute contrastive loss
+        valid_anchors = mask_pos.sum(dim=1) > 0
+        if valid_anchors.sum() == 0:
+            return torch.tensor(0.0, device=embeddings.device, dtype=orig_dtype, requires_grad=True)
+            
+        # Denominator: sum over all different elements (excluding self)
+        exp_logits = torch.exp(logits) * logits_mask
+        sum_exp_logits = exp_logits.sum(dim=1, keepdim=True) + 1e-8
+        
+        # Log probability of all pairs
+        log_prob = logits - torch.log(sum_exp_logits)
+        
+        # Compute mean log likelihood for positive pairs
+        mean_log_prob_pos = (mask_pos * log_prob).sum(dim=1) / (mask_pos.sum(dim=1) + 1e-8)
+        
+        # Average loss over all valid anchors
+        loss = -mean_log_prob_pos[valid_anchors].mean()
+        
+        return loss.to(orig_dtype)
+

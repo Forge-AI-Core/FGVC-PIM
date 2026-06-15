@@ -146,6 +146,10 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
         from utils.loss_utils import BatchHardTripletLoss
         triplet_loss_fn = BatchHardTripletLoss(margin=getattr(args, "triplet_margin", 0.3))
 
+    if getattr(args, "use_supcon", False):
+        from utils.loss_utils import SupConLoss
+        supcon_loss_fn = SupConLoss(temperature=getattr(args, "supcon_temperature", 0.07))
+
     # Load and allocate class weights if provided
     class_weights = None
     if getattr(args, "class_weights", None) is not None:
@@ -262,6 +266,10 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     current_lambda = base_lambda
                 loss_triplet = triplet_loss_fn(outs["comb_embs"], labels)
                 loss += current_lambda * loss_triplet
+
+            if getattr(args, "use_supcon", False) and "comb_embs" in outs:
+                loss_supcon = supcon_loss_fn(outs["comb_embs"], labels)
+                loss += getattr(args, "lambda_supcon", 0.1) * loss_supcon
 
             loss /= args.update_freq
         
