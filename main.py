@@ -454,8 +454,7 @@ def main(args, tlogger):
             
             if is_best:
                 safe_save(checkpoint, args.save_dir + "backup/best_stage1.pt")
-                safe_save(checkpoint, args.save_dir + "backup/best.pt")
-                tlogger.print("....[Stage 1] Saved new best model based on Train Loss: {} (Backup saved to best_stage1.pt)".format(round(best_loss, 5)))
+                tlogger.print("....[Stage 1] Saved new best model based on Train Loss: {}".format(round(best_loss, 5)))
                 tlogger.print()
         else:
             if (epoch + 1) % args.eval_freq == 0:
