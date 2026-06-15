@@ -37,3 +37,4 @@ target_danger_precision: 0.90
 use_triplet: True
 lambda_triplet: 0.2
 triplet_margin: 0.3
+triplet_warmup_epochs: 0
