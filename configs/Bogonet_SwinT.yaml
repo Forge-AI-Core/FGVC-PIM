@@ -11,9 +11,9 @@ model_name: swin-b
 pretrained: ~
 optimizer: AdamW
 max_lr: 0.00005
-wdecay: 0.1
-drop_path_rate: 0.3
-max_epochs: 30
+wdecay: 0.15
+drop_path_rate: 0.4
+max_epochs: 10
 warmup_batchs: 800
 use_amp: True
 use_fpn: True
@@ -40,3 +40,5 @@ triplet_margin: 0.3
 use_supcon: True
 lambda_supcon: 0.1
 supcon_temperature: 0.07
+train_stage: stage1
+
