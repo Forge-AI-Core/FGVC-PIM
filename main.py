@@ -563,7 +563,6 @@ if __name__ == "__main__":
     tlogger.print("Reading Config...")
     args = get_args()
     assert args.c != "", "Please provide config file (.yaml)"
-    load_yaml(args, args.c)
     build_record_folder(args)
     tlogger.print()
 

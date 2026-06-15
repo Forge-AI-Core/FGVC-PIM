@@ -32,6 +32,7 @@ def get_args(with_deepspeed: bool=False):
 
     parser.add_argument("--project_name", default="")
     parser.add_argument("--exp_name", default="")
+    parser.add_argument("--pretrained", default=None, type=str)
 
     parser.add_argument("--c", default="", type=str, help="config file path")
     
@@ -86,7 +87,14 @@ def get_args(with_deepspeed: bool=False):
         import deepspeed
         parser = deepspeed.add_config_arguments(parser)
     
-    args = parser.parse_args()
+    # Parse once to get config path `--c`
+    args, remaining = parser.parse_known_args()
+    if args.c != "":
+        load_yaml(args, args.c)
+    
+    # Parse again using the loaded YAML namespace to allow CLI arguments to override YAML settings
+    parser.parse_args(remaining, namespace=args)
 
     return args
+
 
