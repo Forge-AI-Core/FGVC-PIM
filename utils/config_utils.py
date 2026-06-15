@@ -88,12 +88,19 @@ def get_args(with_deepspeed: bool=False):
         parser = deepspeed.add_config_arguments(parser)
     
     # Parse once to get config path `--c`
-    args, remaining = parser.parse_known_args()
-    if args.c != "":
-        load_yaml(args, args.c)
+    temp_parser = argparse.ArgumentParser(add_help=False)
+    temp_parser.add_argument("--c", default="", type=str)
+    temp_args, _ = temp_parser.parse_known_args()
+    
+    args = argparse.Namespace()
+    if temp_args.c != "":
+        load_yaml(args, temp_args.c)
+        args.c = temp_args.c
+    else:
+        args.c = ""
     
     # Parse again using the loaded YAML namespace to allow CLI arguments to override YAML settings
-    parser.parse_args(remaining, namespace=args)
+    parser.parse_args(namespace=args)
 
     return args
 
