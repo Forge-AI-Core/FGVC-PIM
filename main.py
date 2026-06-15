@@ -97,6 +97,22 @@ def set_environment(args, tlogger):
     else:
         start_epoch = 0
 
+    # Layer freezing based on train stage
+    stage = getattr(args, "train_stage", "joint")
+    print(f"    Train Stage: {stage}")
+    if stage == "stage1":
+        for name, param in model.named_parameters():
+            if "classifier" in name:
+                param.requires_grad = False
+        print("    [Stage 1] Frozen all classifier parameters.")
+    elif stage == "stage2":
+        for name, param in model.named_parameters():
+            if "classifier" in name:
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+        print("    [Stage 2] Frozen all feature extraction layers. Only classifiers are trainable.")
+
     # model = torch.nn.DataParallel(model, device_ids=None) # device_ids : None --> use all gpus.
     model.to(args.device)
     
@@ -115,12 +131,13 @@ def set_environment(args, tlogger):
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
+    active_params = [p for p in model.parameters() if p.requires_grad]
     if args.optimizer == "SGD":
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
+        optimizer = torch.optim.SGD(active_params, lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
     elif args.optimizer == "AdamW":
-        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr, weight_decay=args.wdecay)
+        optimizer = torch.optim.AdamW(active_params, lr=args.max_lr, weight_decay=args.wdecay)
 
-    if args.pretrained is not None:
+    if args.pretrained is not None and stage != "stage2":
         optimizer.load_state_dict(checkpoint['optimizer'])
 
     tlogger.print()
@@ -141,6 +158,8 @@ def set_environment(args, tlogger):
 
 
 def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader):
+
+    stage = getattr(args, "train_stage", "joint")
 
     if getattr(args, "use_triplet", False):
         from utils.loss_utils import BatchHardTripletLoss
@@ -202,7 +221,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         logit = outs[name].view(-1, args.num_classes).contiguous()
                         loss_s = criterion(logit, 
                                            labels.unsqueeze(1).repeat(1, S).flatten(0))
-                        loss += args.lambda_s * loss_s
+                        if stage != "stage1":
+                            loss += args.lambda_s * loss_s
                     else:
                         loss_s = 0.0
 
@@ -217,7 +237,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         labels_0 = torch.zeros([batch_size * S, args.num_classes]) - 1
                         labels_0 = labels_0.to(args.device)
                         loss_n = nn.MSELoss()(n_preds, labels_0)
-                        loss += args.lambda_n * loss_n
+                        if stage != "stage1":
+                            loss += args.lambda_n * loss_n
                     else:
                         loss_n = 0.0
 
@@ -227,7 +248,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     if args.lambda_b != 0:
                         ### here using 'layer1'~'layer4' is default setting, you can change to your own
                         loss_b = criterion(outs[name].mean(1), labels)
-                        loss += args.lambda_b * loss_b
+                        if stage != "stage1":
+                            loss += args.lambda_b * loss_b
                     else:
                         loss_b = 0.0
                 
@@ -237,7 +259,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
 
                     if args.lambda_c != 0:
                         loss_c = criterion(outs[name], labels)
-                        loss += args.lambda_c * loss_c
+                        if stage != "stage1":
+                            loss += args.lambda_c * loss_c
                     # combiner 기준 예측값 누적 (Precision/Recall/F1용)
                     with torch.no_grad():
                         preds = torch.argmax(outs[name], dim=1).cpu().tolist()
@@ -248,7 +271,8 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
 
                 elif "ori_out" in name:
                     loss_ori = criterion(outs[name], labels)
-                    loss += loss_ori
+                    if stage != "stage1":
+                        loss += loss_ori
                     if not args.use_combiner:
                         with torch.no_grad():
                             preds = torch.argmax(outs[name], dim=1).cpu().tolist()
@@ -257,7 +281,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                             probs = torch.softmax(outs[name], dim=1).cpu().tolist()
                             all_train_scores.extend(probs)
             
-            if getattr(args, "use_triplet", False) and "comb_embs" in outs:
+            if getattr(args, "use_triplet", False) and "comb_embs" in outs and stage != "stage2":
                 warmup_epochs = getattr(args, "triplet_warmup_epochs", 10)
                 base_lambda = getattr(args, "lambda_triplet", 1.0)
                 if warmup_epochs > 0 and epoch < warmup_epochs:
@@ -267,9 +291,13 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                 loss_triplet = triplet_loss_fn(outs["comb_embs"], labels)
                 loss += current_lambda * loss_triplet
 
-            if getattr(args, "use_supcon", False) and "comb_embs" in outs:
+            if getattr(args, "use_supcon", False) and "comb_embs" in outs and stage != "stage2":
                 loss_supcon = supcon_loss_fn(outs["comb_embs"], labels)
                 loss += getattr(args, "lambda_supcon", 0.1) * loss_supcon
+
+            # Ensure loss is a tensor to avoid errors in backward pass
+            if not isinstance(loss, torch.Tensor):
+                loss = torch.tensor(0.0, device=args.device, requires_grad=True)
 
             loss /= args.update_freq
         

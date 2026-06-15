@@ -80,6 +80,7 @@ def get_args(with_deepspeed: bool=False):
     parser.add_argument("--use_supcon", default=False, type=bool)
     parser.add_argument("--lambda_supcon", default=0.1, type=float)
     parser.add_argument("--supcon_temperature", default=0.07, type=float)
+    parser.add_argument("--train_stage", default="joint", type=str, choices=["joint", "stage1", "stage2"])
 
     if with_deepspeed:
         import deepspeed
