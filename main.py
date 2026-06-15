@@ -140,7 +140,7 @@ def set_environment(args, tlogger):
     elif args.optimizer == "AdamW":
         optimizer = torch.optim.AdamW(active_params, lr=args.max_lr, weight_decay=args.wdecay)
 
-    if args.pretrained is not None and stage != "stage2":
+    if args.pretrained is not None and stage != "stage2" and "best_stage1" not in args.pretrained:
         optimizer.load_state_dict(checkpoint['optimizer'])
 
     tlogger.print()
