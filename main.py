@@ -93,7 +93,10 @@ def set_environment(args, tlogger):
     if args.pretrained is not None:
         checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'), weights_only=False)
         model.load_state_dict(checkpoint['model'])
-        start_epoch = checkpoint['epoch']
+        if getattr(args, "train_stage", "joint") == "stage2" and "best_stage1" in args.pretrained:
+            start_epoch = 0
+        else:
+            start_epoch = checkpoint['epoch']
     else:
         start_epoch = 0
 
