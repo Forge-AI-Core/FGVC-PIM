@@ -182,6 +182,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
     all_train_preds = []
     all_train_labels = []
     all_train_scores = []
+    epoch_loss = 0.0
     for batch_id, (ids, datas, labels) in enumerate(train_loader):
         model.train()
         """ = = = = adjust learning rate = = = = """
@@ -299,6 +300,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
             if not isinstance(loss, torch.Tensor):
                 loss = torch.tensor(0.0, device=args.device, requires_grad=True)
 
+            epoch_loss += loss.item() * args.update_freq
             loss /= args.update_freq
         
         """ = = = = calculate gradient = = = = """
@@ -334,7 +336,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
             print(".."+str(int(show_progress[progress_i] * 100)) + "%", end='', flush=True)
             progress_i += 1
 
-    return all_train_preds, all_train_labels, all_train_scores
+    return all_train_preds, all_train_labels, all_train_scores, epoch_loss / len(train_loader)
 
 
 def main(args, tlogger):
@@ -347,6 +349,7 @@ def main(args, tlogger):
     best_acc = 0.0
     best_danger_pr_auc = 0.0
     best_eval_name = "null"
+    best_loss = float('inf')
 
     # Find danger class index
     danger_idx = -1
@@ -386,38 +389,49 @@ def main(args, tlogger):
         """
         Train
         """
+        stage = getattr(args, "train_stage", "joint")
         if train_loader is not None:
             tlogger.print("Start Training {} Epoch".format(epoch+1))
-            all_train_preds, all_train_labels, all_train_scores = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
-            # Train 에포크 끝 - combiner 기준 Precision/Recall/F1 계산
-            if len(all_train_preds) > 0:
-                train_prec, train_rec, train_f1, _ = precision_recall_fscore_support(
-                    all_train_labels, all_train_preds, average='macro', zero_division=0)
-                train_combiner_acc = round(
-                    100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
-                
-                # Calculate train Danger PR AUC
-                train_danger_pr_auc = 0.0
-                if danger_idx != -1 and len(all_train_scores) > 0:
-                    from sklearn.metrics import precision_recall_curve, auc
-                    y_true_train = [1 if label == danger_idx else 0 for label in all_train_labels]
-                    y_scores_train = [score[danger_idx] for score in all_train_scores]
-                    if sum(y_true_train) > 0 and sum(y_true_train) < len(y_true_train):
-                        precision_vals_tr, recall_vals_tr, _ = precision_recall_curve(y_true_train, y_scores_train)
-                        train_danger_pr_auc = round(auc(recall_vals_tr, precision_vals_tr) * 100, 3)
-                
-                tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}% | Danger PR AUC: {}%".format(
-                    train_combiner_acc,
-                    round(train_prec * 100, 3),
-                    round(train_rec * 100, 3),
-                    round(train_f1 * 100, 3),
-                    train_danger_pr_auc))
+            all_train_preds, all_train_labels, all_train_scores, avg_loss = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
+            
+            if stage == "stage1":
+                tlogger.print("....Train | Stage 1 Loss: {}".format(round(avg_loss, 5)))
                 train_history["epoch"].append(epoch + 1)
-                train_history["acc"].append(train_combiner_acc)
-                train_history["precision"].append(round(train_prec * 100, 3))
-                train_history["recall"].append(round(train_rec * 100, 3))
-                train_history["f1"].append(round(train_f1 * 100, 3))
-                train_history["danger_pr_auc"].append(train_danger_pr_auc)
+                train_history["acc"].append(0.0)
+                train_history["precision"].append(0.0)
+                train_history["recall"].append(0.0)
+                train_history["f1"].append(0.0)
+                train_history["danger_pr_auc"].append(0.0)
+            else:
+                # Train 에포크 끝 - combiner 기준 Precision/Recall/F1 계산
+                if len(all_train_preds) > 0:
+                    train_prec, train_rec, train_f1, _ = precision_recall_fscore_support(
+                        all_train_labels, all_train_preds, average='macro', zero_division=0)
+                    train_combiner_acc = round(
+                        100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
+                    
+                    # Calculate train Danger PR AUC
+                    train_danger_pr_auc = 0.0
+                    if danger_idx != -1 and len(all_train_scores) > 0:
+                        from sklearn.metrics import precision_recall_curve, auc
+                        y_true_train = [1 if label == danger_idx else 0 for label in all_train_labels]
+                        y_scores_train = [score[danger_idx] for score in all_train_scores]
+                        if sum(y_true_train) > 0 and sum(y_true_train) < len(y_true_train):
+                            precision_vals_tr, recall_vals_tr, _ = precision_recall_curve(y_true_train, y_scores_train)
+                            train_danger_pr_auc = round(auc(recall_vals_tr, precision_vals_tr) * 100, 3)
+                    
+                    tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}% | Danger PR AUC: {}%".format(
+                        train_combiner_acc,
+                        round(train_prec * 100, 3),
+                        round(train_rec * 100, 3),
+                        round(train_f1 * 100, 3),
+                        train_danger_pr_auc))
+                    train_history["epoch"].append(epoch + 1)
+                    train_history["acc"].append(train_combiner_acc)
+                    train_history["precision"].append(round(train_prec * 100, 3))
+                    train_history["recall"].append(round(train_rec * 100, 3))
+                    train_history["f1"].append(round(train_f1 * 100, 3))
+                    train_history["danger_pr_auc"].append(train_danger_pr_auc)
             tlogger.print()
         else:
             from eval import eval_and_save
@@ -430,46 +444,53 @@ def main(args, tlogger):
         checkpoint = {"model": model_to_save.state_dict(), "optimizer": optimizer.state_dict(), "epoch":epoch}
         safe_save(checkpoint, args.save_dir + "backup/last.pt")
 
-        if (epoch + 1) % args.eval_freq == 0:
-            """
-            Evaluation
-            """
-            acc = -1
-            if val_loader is not None:
-                tlogger.print("Start Evaluating {} Epoch".format(epoch + 1))
-                acc, eval_name, accs = evaluate(args, model, val_loader)
-                prec = accs.get("Precision", 0)
-                rec = accs.get("Recall", 0)
-                f1 = accs.get("F1-Score", 0)
-                combiner_acc = accs.get("combiner-top-1", acc)
-                danger_pr_auc = accs.get("danger_PR_AUC", 0.0)
-                tlogger.print("....Eval | Danger PR AUC: {}% (Best: {}%) | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
-                    danger_pr_auc, max(danger_pr_auc, best_danger_pr_auc), max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
-                tlogger.print()
-                eval_history["epoch"].append(epoch + 1)
-                eval_history["acc"].append(combiner_acc)
-                eval_history["precision"].append(prec)
-                eval_history["recall"].append(rec)
-                eval_history["f1"].append(f1)
-                eval_history["danger_pr_auc"].append(danger_pr_auc)
-
-            if args.use_wandb:
-                wandb.log(accs)
-
-            # Determine best model based on Danger class PR AUC (fallback to combiner_acc if danger class is not found)
+        if stage == "stage1":
             is_best = False
-            if "danger_PR_AUC" in accs:
-                if danger_pr_auc > best_danger_pr_auc:
-                    best_danger_pr_auc = danger_pr_auc
-                    is_best = True
-            else:
-                if combiner_acc > best_acc:
-                    is_best = True
-
+            if avg_loss < best_loss:
+                best_loss = avg_loss
+                is_best = True
+            
             if is_best:
-                best_acc = combiner_acc
-                best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
                 safe_save(checkpoint, args.save_dir + "backup/best.pt")
+                tlogger.print("....[Stage 1] Saved new best model based on Train Loss: {}".format(round(best_loss, 5)))
+                tlogger.print()
+        else:
+            if (epoch + 1) % args.eval_freq == 0:
+                acc = -1
+                if val_loader is not None:
+                    tlogger.print("Start Evaluating {} Epoch".format(epoch + 1))
+                    acc, eval_name, accs = evaluate(args, model, val_loader)
+                    prec = accs.get("Precision", 0)
+                    rec = accs.get("Recall", 0)
+                    f1 = accs.get("F1-Score", 0)
+                    combiner_acc = accs.get("combiner-top-1", acc)
+                    danger_pr_auc = accs.get("danger_PR_AUC", 0.0)
+                    tlogger.print("....Eval | Danger PR AUC: {}% (Best: {}%) | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                        danger_pr_auc, max(danger_pr_auc, best_danger_pr_auc), max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
+                    tlogger.print()
+                    eval_history["epoch"].append(epoch + 1)
+                    eval_history["acc"].append(combiner_acc)
+                    eval_history["precision"].append(prec)
+                    eval_history["recall"].append(rec)
+                    eval_history["f1"].append(f1)
+                    eval_history["danger_pr_auc"].append(danger_pr_auc)
+
+                if args.use_wandb:
+                    wandb.log(accs)
+
+                is_best = False
+                if "danger_PR_AUC" in accs:
+                    if danger_pr_auc > best_danger_pr_auc:
+                        best_danger_pr_auc = danger_pr_auc
+                        is_best = True
+                else:
+                    if combiner_acc > best_acc:
+                        is_best = True
+
+                if is_best:
+                    best_acc = combiner_acc
+                    best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
+                    safe_save(checkpoint, args.save_dir + "backup/best.pt")
                 
             if args.use_wandb:
                 wandb.run.summary["best_acc"] = best_acc
