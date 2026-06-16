@@ -64,4 +64,3 @@ class BatchHardTripletLoss(nn.Module):
             return torch.tensor(0.0, device=embeddings.device, dtype=orig_dtype, requires_grad=True)
             
         return losses[valid_triplets].mean().to(orig_dtype)
-

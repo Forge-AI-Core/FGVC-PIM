@@ -32,7 +32,6 @@ def get_args(with_deepspeed: bool=False):
 
     parser.add_argument("--project_name", default="")
     parser.add_argument("--exp_name", default="")
-    parser.add_argument("--pretrained", default=None, type=str)
 
     parser.add_argument("--c", default="", type=str, help="config file path")
     
@@ -77,27 +76,13 @@ def get_args(with_deepspeed: bool=False):
     parser.add_argument("--lambda_triplet", default=1.0, type=float)
     parser.add_argument("--triplet_margin", default=0.3, type=float)
     parser.add_argument("--triplet_warmup_epochs", default=0, type=int)
-    parser.add_argument("--train_stage", default="joint", type=str, choices=["joint", "stage1", "stage2"])
+    parser.add_argument("--class_weights", default=None, type=float, nargs='+')
 
     if with_deepspeed:
         import deepspeed
         parser = deepspeed.add_config_arguments(parser)
     
-    # Parse once to get config path `--c`
-    temp_parser = argparse.ArgumentParser(add_help=False)
-    temp_parser.add_argument("--c", default="", type=str)
-    temp_args, _ = temp_parser.parse_known_args()
-    
-    args = argparse.Namespace()
-    if temp_args.c != "":
-        load_yaml(args, temp_args.c)
-        args.c = temp_args.c
-    else:
-        args.c = ""
-    
-    # Parse again using the loaded YAML namespace to allow CLI arguments to override YAML settings
-    parser.parse_args(namespace=args)
+    args = parser.parse_args()
 
     return args
-
 

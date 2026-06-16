@@ -93,28 +93,9 @@ def set_environment(args, tlogger):
     if args.pretrained is not None:
         checkpoint = torch.load(args.pretrained, map_location=torch.device('cpu'), weights_only=False)
         model.load_state_dict(checkpoint['model'])
-        if getattr(args, "train_stage", "joint") == "stage2":
-            start_epoch = 0
-        else:
-            start_epoch = checkpoint['epoch']
+        start_epoch = checkpoint['epoch']
     else:
         start_epoch = 0
-
-    # Layer freezing based on train stage
-    stage = getattr(args, "train_stage", "joint")
-    print(f"    Train Stage: {stage}")
-    if stage == "stage1":
-        for name, param in model.named_parameters():
-            if "classifier" in name:
-                param.requires_grad = False
-        print("    [Stage 1] Frozen all classifier parameters.")
-    elif stage == "stage2":
-        for name, param in model.named_parameters():
-            if "backbone" in name:
-                param.requires_grad = False
-            else:
-                param.requires_grad = True
-        print("    [Stage 2] Frozen all backbone layers. FPN, Combiner, and classifiers are trainable.")
 
     # model = torch.nn.DataParallel(model, device_ids=None) # device_ids : None --> use all gpus.
     model.to(args.device)
@@ -134,13 +115,12 @@ def set_environment(args, tlogger):
     
     ### = = = =  Optimizer = = = =  
     tlogger.print("Building Optimizer....")
-    active_params = [p for p in model.parameters() if p.requires_grad]
     if args.optimizer == "SGD":
-        optimizer = torch.optim.SGD(active_params, lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.max_lr, nesterov=True, momentum=0.9, weight_decay=args.wdecay)
     elif args.optimizer == "AdamW":
-        optimizer = torch.optim.AdamW(active_params, lr=args.max_lr, weight_decay=args.wdecay)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=args.max_lr, weight_decay=args.wdecay)
 
-    if args.pretrained is not None and stage != "stage2" and "best_stage1" not in args.pretrained:
+    if args.pretrained is not None:
         optimizer.load_state_dict(checkpoint['optimizer'])
 
     tlogger.print()
@@ -162,12 +142,9 @@ def set_environment(args, tlogger):
 
 def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader):
 
-    stage = getattr(args, "train_stage", "joint")
-
     if getattr(args, "use_triplet", False):
         from utils.loss_utils import BatchHardTripletLoss
         triplet_loss_fn = BatchHardTripletLoss(margin=getattr(args, "triplet_margin", 0.3))
-
 
     # Load and allocate class weights if provided
     class_weights = None
@@ -182,7 +159,6 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
     all_train_preds = []
     all_train_labels = []
     all_train_scores = []
-    epoch_loss = 0.0
     for batch_id, (ids, datas, labels) in enumerate(train_loader):
         model.train()
         """ = = = = adjust learning rate = = = = """
@@ -222,8 +198,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         logit = outs[name].view(-1, args.num_classes).contiguous()
                         loss_s = criterion(logit, 
                                            labels.unsqueeze(1).repeat(1, S).flatten(0))
-                        if stage != "stage1":
-                            loss += args.lambda_s * loss_s
+                        loss += args.lambda_s * loss_s
                     else:
                         loss_s = 0.0
 
@@ -238,8 +213,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                         labels_0 = torch.zeros([batch_size * S, args.num_classes]) - 1
                         labels_0 = labels_0.to(args.device)
                         loss_n = nn.MSELoss()(n_preds, labels_0)
-                        if stage != "stage1":
-                            loss += args.lambda_n * loss_n
+                        loss += args.lambda_n * loss_n
                     else:
                         loss_n = 0.0
 
@@ -249,8 +223,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                     if args.lambda_b != 0:
                         ### here using 'layer1'~'layer4' is default setting, you can change to your own
                         loss_b = criterion(outs[name].mean(1), labels)
-                        if stage != "stage1":
-                            loss += args.lambda_b * loss_b
+                        loss += args.lambda_b * loss_b
                     else:
                         loss_b = 0.0
                 
@@ -260,8 +233,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
 
                     if args.lambda_c != 0:
                         loss_c = criterion(outs[name], labels)
-                        if stage != "stage1":
-                            loss += args.lambda_c * loss_c
+                        loss += args.lambda_c * loss_c
                     # combiner 기준 예측값 누적 (Precision/Recall/F1용)
                     with torch.no_grad():
                         preds = torch.argmax(outs[name], dim=1).cpu().tolist()
@@ -272,8 +244,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
 
                 elif "ori_out" in name:
                     loss_ori = criterion(outs[name], labels)
-                    if stage != "stage1":
-                        loss += loss_ori
+                    loss += loss_ori
                     if not args.use_combiner:
                         with torch.no_grad():
                             preds = torch.argmax(outs[name], dim=1).cpu().tolist()
@@ -282,7 +253,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                             probs = torch.softmax(outs[name], dim=1).cpu().tolist()
                             all_train_scores.extend(probs)
             
-            if getattr(args, "use_triplet", False) and "comb_embs" in outs and stage != "stage2":
+            if getattr(args, "use_triplet", False) and "comb_embs" in outs:
                 warmup_epochs = getattr(args, "triplet_warmup_epochs", 10)
                 base_lambda = getattr(args, "lambda_triplet", 1.0)
                 if warmup_epochs > 0 and epoch < warmup_epochs:
@@ -292,12 +263,6 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                 loss_triplet = triplet_loss_fn(outs["comb_embs"], labels)
                 loss += current_lambda * loss_triplet
 
-
-            # Ensure loss is a tensor to avoid errors in backward pass
-            if not isinstance(loss, torch.Tensor):
-                loss = torch.tensor(0.0, device=args.device, requires_grad=True)
-
-            epoch_loss += loss.item() * args.update_freq
             loss /= args.update_freq
         
         """ = = = = calculate gradient = = = = """
@@ -333,7 +298,7 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
             print(".."+str(int(show_progress[progress_i] * 100)) + "%", end='', flush=True)
             progress_i += 1
 
-    return all_train_preds, all_train_labels, all_train_scores, epoch_loss / len(train_loader)
+    return all_train_preds, all_train_labels, all_train_scores
 
 
 def main(args, tlogger):
@@ -346,7 +311,6 @@ def main(args, tlogger):
     best_acc = 0.0
     best_danger_pr_auc = 0.0
     best_eval_name = "null"
-    best_loss = float('inf')
 
     # Find danger class index
     danger_idx = -1
@@ -368,7 +332,7 @@ def main(args, tlogger):
         pass
 
     # 그래프용 지표 누적
-    train_history = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": [], "danger_pr_auc": [], "loss": []}
+    train_history = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": [], "danger_pr_auc": []}
     eval_history  = {"epoch": [], "acc": [], "precision": [], "recall": [], "f1": [], "danger_pr_auc": []}
 
     if args.use_wandb:
@@ -386,51 +350,38 @@ def main(args, tlogger):
         """
         Train
         """
-        stage = getattr(args, "train_stage", "joint")
         if train_loader is not None:
             tlogger.print("Start Training {} Epoch".format(epoch+1))
-            all_train_preds, all_train_labels, all_train_scores, avg_loss = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
-            
-            if stage == "stage1":
-                tlogger.print("....Train | Stage 1 Loss: {}".format(round(avg_loss, 5)))
+            all_train_preds, all_train_labels, all_train_scores = train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_loader)
+            # Train 에포크 끝 - combiner 기준 Precision/Recall/F1 계산
+            if len(all_train_preds) > 0:
+                train_prec, train_rec, train_f1, _ = precision_recall_fscore_support(
+                    all_train_labels, all_train_preds, average='macro', zero_division=0)
+                train_combiner_acc = round(
+                    100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
+                
+                # Calculate train Danger PR AUC
+                train_danger_pr_auc = 0.0
+                if danger_idx != -1 and len(all_train_scores) > 0:
+                    from sklearn.metrics import precision_recall_curve, auc
+                    y_true_train = [1 if label == danger_idx else 0 for label in all_train_labels]
+                    y_scores_train = [score[danger_idx] for score in all_train_scores]
+                    if sum(y_true_train) > 0 and sum(y_true_train) < len(y_true_train):
+                        precision_vals_tr, recall_vals_tr, _ = precision_recall_curve(y_true_train, y_scores_train)
+                        train_danger_pr_auc = round(auc(recall_vals_tr, precision_vals_tr) * 100, 3)
+                
+                tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}% | Danger PR AUC: {}%".format(
+                    train_combiner_acc,
+                    round(train_prec * 100, 3),
+                    round(train_rec * 100, 3),
+                    round(train_f1 * 100, 3),
+                    train_danger_pr_auc))
                 train_history["epoch"].append(epoch + 1)
-                train_history["acc"].append(0.0)
-                train_history["precision"].append(0.0)
-                train_history["recall"].append(0.0)
-                train_history["f1"].append(0.0)
-                train_history["danger_pr_auc"].append(0.0)
-                train_history["loss"].append(avg_loss)
-            else:
-                # Train 에포크 끝 - combiner 기준 Precision/Recall/F1 계산
-                if len(all_train_preds) > 0:
-                    train_prec, train_rec, train_f1, _ = precision_recall_fscore_support(
-                        all_train_labels, all_train_preds, average='macro', zero_division=0)
-                    train_combiner_acc = round(
-                        100 * sum(p == l for p, l in zip(all_train_preds, all_train_labels)) / len(all_train_labels), 3)
-                    
-                    # Calculate train Danger PR AUC
-                    train_danger_pr_auc = 0.0
-                    if danger_idx != -1 and len(all_train_scores) > 0:
-                        from sklearn.metrics import precision_recall_curve, auc
-                        y_true_train = [1 if label == danger_idx else 0 for label in all_train_labels]
-                        y_scores_train = [score[danger_idx] for score in all_train_scores]
-                        if sum(y_true_train) > 0 and sum(y_true_train) < len(y_true_train):
-                            precision_vals_tr, recall_vals_tr, _ = precision_recall_curve(y_true_train, y_scores_train)
-                            train_danger_pr_auc = round(auc(recall_vals_tr, precision_vals_tr) * 100, 3)
-                    
-                    tlogger.print("....Train | ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}% | Danger PR AUC: {}%".format(
-                        train_combiner_acc,
-                        round(train_prec * 100, 3),
-                        round(train_rec * 100, 3),
-                        round(train_f1 * 100, 3),
-                        train_danger_pr_auc))
-                    train_history["epoch"].append(epoch + 1)
-                    train_history["acc"].append(train_combiner_acc)
-                    train_history["precision"].append(round(train_prec * 100, 3))
-                    train_history["recall"].append(round(train_rec * 100, 3))
-                    train_history["f1"].append(round(train_f1 * 100, 3))
-                    train_history["danger_pr_auc"].append(train_danger_pr_auc)
-                    train_history["loss"].append(avg_loss)
+                train_history["acc"].append(train_combiner_acc)
+                train_history["precision"].append(round(train_prec * 100, 3))
+                train_history["recall"].append(round(train_rec * 100, 3))
+                train_history["f1"].append(round(train_f1 * 100, 3))
+                train_history["danger_pr_auc"].append(train_danger_pr_auc)
             tlogger.print()
         else:
             from eval import eval_and_save
@@ -443,53 +394,46 @@ def main(args, tlogger):
         checkpoint = {"model": model_to_save.state_dict(), "optimizer": optimizer.state_dict(), "epoch":epoch}
         safe_save(checkpoint, args.save_dir + "backup/last.pt")
 
-        if stage == "stage1":
-            is_best = False
-            if avg_loss < best_loss:
-                best_loss = avg_loss
-                is_best = True
-            
-            if is_best:
-                safe_save(checkpoint, args.save_dir + "backup/best_stage1.pt")
-                tlogger.print("....[Stage 1] Saved new best model based on Train Loss: {}".format(round(best_loss, 5)))
+        if (epoch + 1) % args.eval_freq == 0:
+            """
+            Evaluation
+            """
+            acc = -1
+            if val_loader is not None:
+                tlogger.print("Start Evaluating {} Epoch".format(epoch + 1))
+                acc, eval_name, accs = evaluate(args, model, val_loader)
+                prec = accs.get("Precision", 0)
+                rec = accs.get("Recall", 0)
+                f1 = accs.get("F1-Score", 0)
+                combiner_acc = accs.get("combiner-top-1", acc)
+                danger_pr_auc = accs.get("danger_PR_AUC", 0.0)
+                tlogger.print("....Eval | Danger PR AUC: {}% (Best: {}%) | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
+                    danger_pr_auc, max(danger_pr_auc, best_danger_pr_auc), max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
                 tlogger.print()
-        else:
-            if (epoch + 1) % args.eval_freq == 0:
-                acc = -1
-                if val_loader is not None:
-                    tlogger.print("Start Evaluating {} Epoch".format(epoch + 1))
-                    acc, eval_name, accs = evaluate(args, model, val_loader)
-                    prec = accs.get("Precision", 0)
-                    rec = accs.get("Recall", 0)
-                    f1 = accs.get("F1-Score", 0)
-                    combiner_acc = accs.get("combiner-top-1", acc)
-                    danger_pr_auc = accs.get("danger_PR_AUC", 0.0)
-                    tlogger.print("....Eval | Danger PR AUC: {}% (Best: {}%) | ACC: {}% ({}%) | Precision: {}% | Recall: {}% | F1-Score: {}%".format(
-                        danger_pr_auc, max(danger_pr_auc, best_danger_pr_auc), max(combiner_acc, best_acc), combiner_acc, prec, rec, f1))
-                    tlogger.print()
-                    eval_history["epoch"].append(epoch + 1)
-                    eval_history["acc"].append(combiner_acc)
-                    eval_history["precision"].append(prec)
-                    eval_history["recall"].append(rec)
-                    eval_history["f1"].append(f1)
-                    eval_history["danger_pr_auc"].append(danger_pr_auc)
+                eval_history["epoch"].append(epoch + 1)
+                eval_history["acc"].append(combiner_acc)
+                eval_history["precision"].append(prec)
+                eval_history["recall"].append(rec)
+                eval_history["f1"].append(f1)
+                eval_history["danger_pr_auc"].append(danger_pr_auc)
 
-                if args.use_wandb:
-                    wandb.log(accs)
+            if args.use_wandb:
+                wandb.log(accs)
 
-                is_best = False
-                if "danger_PR_AUC" in accs:
-                    if danger_pr_auc > best_danger_pr_auc:
-                        best_danger_pr_auc = danger_pr_auc
-                        is_best = True
-                else:
-                    if combiner_acc > best_acc:
-                        is_best = True
+            # Determine best model based on Danger class PR AUC (fallback to combiner_acc if danger class is not found)
+            is_best = False
+            if "danger_PR_AUC" in accs:
+                if danger_pr_auc > best_danger_pr_auc:
+                    best_danger_pr_auc = danger_pr_auc
+                    is_best = True
+            else:
+                if combiner_acc > best_acc:
+                    is_best = True
 
-                if is_best:
-                    best_acc = combiner_acc
-                    best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
-                    safe_save(checkpoint, args.save_dir + "backup/best.pt")
+            if is_best:
+                best_acc = combiner_acc
+                best_eval_name = "danger-pr-auc" if "danger_PR_AUC" in accs else "combiner-top-1"
+                safe_save(checkpoint, args.save_dir + "backup/best.pt")
                 
             if args.use_wandb:
                 wandb.run.summary["best_acc"] = best_acc
@@ -500,8 +444,7 @@ def main(args, tlogger):
     save_metrics_plots(args, train_history, eval_history)
 
     # Save final eval results with the best model
-    stage = getattr(args, "train_stage", "joint")
-    if val_loader is not None and train_loader is not None and stage != "stage1":
+    if val_loader is not None and train_loader is not None:
         import os
         best_path = os.path.join(args.save_dir, "backup", "best.pt")
         if os.path.exists(best_path):
@@ -560,6 +503,7 @@ if __name__ == "__main__":
     tlogger.print("Reading Config...")
     args = get_args()
     assert args.c != "", "Please provide config file (.yaml)"
+    load_yaml(args, args.c)
     build_record_folder(args)
     tlogger.print()
 
