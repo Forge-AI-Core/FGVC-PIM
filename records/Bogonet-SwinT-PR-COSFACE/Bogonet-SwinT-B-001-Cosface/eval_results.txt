@@ -1,0 +1,35 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-PR-COSFACE, Experiment: Bogonet-SwinT-B-001-Cosface
+Samples: 3369
+
+    layer1-top-1 80.113%
+    layer1-top-3 100.0%
+    layer2-top-1 79.994%
+    layer2-top-3 100.0%
+    layer3-top-1 79.816%
+    layer3-top-3 100.0%
+    layer4-top-1 80.024%
+    layer4-top-3 100.0%
+    combiner-top-1 80.024%
+    combiner-top-3 100.0%
+    danger_PR_AUC 82.463%
+    danger_AP 78.336%
+
+[Overall Performance]
+    Precision: 78.674%
+    Recall: 76.923%
+    F1-Score: 77.71%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 85.51% | Precision: 83.271% | Recall: 85.51% | F1-Score: 84.376%
+  - Class 'danger':
+    ACC: 76.122% | Precision: 75.126% | Recall: 76.122% | F1-Score: 75.621%
+  - Class 'excluded':
+    ACC: 69.136% | Precision: 77.624% | Recall: 69.136% | F1-Score: 73.134%
+
+[Danger Class Target Precision >= 90%]
+    Recommended Threshold: N/A
+    Recall at this Threshold: 0.0%
+
+BEST_ACC: layer1-top-1 80.113% 
