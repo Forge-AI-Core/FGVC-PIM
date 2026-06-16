@@ -37,7 +37,4 @@ target_danger_precision: 0.90
 use_triplet: True
 lambda_triplet: 0.2
 triplet_margin: 0.3
-use_supcon: False
-lambda_supcon: 0.1
-supcon_temperature: 0.07
 train_stage: joint

@@ -168,9 +168,6 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
         from utils.loss_utils import BatchHardTripletLoss
         triplet_loss_fn = BatchHardTripletLoss(margin=getattr(args, "triplet_margin", 0.3))
 
-    if getattr(args, "use_supcon", False):
-        from utils.loss_utils import SupConLoss
-        supcon_loss_fn = SupConLoss(temperature=getattr(args, "supcon_temperature", 0.07))
 
     # Load and allocate class weights if provided
     class_weights = None
@@ -295,9 +292,6 @@ def train(args, epoch, model, scaler, amp_context, optimizer, schedule, train_lo
                 loss_triplet = triplet_loss_fn(outs["comb_embs"], labels)
                 loss += current_lambda * loss_triplet
 
-            if getattr(args, "use_supcon", False) and "comb_embs" in outs and stage != "stage2":
-                loss_supcon = supcon_loss_fn(outs["comb_embs"], labels)
-                loss += getattr(args, "lambda_supcon", 0.1) * loss_supcon
 
             # Ensure loss is a tensor to avoid errors in backward pass
             if not isinstance(loss, torch.Tensor):
