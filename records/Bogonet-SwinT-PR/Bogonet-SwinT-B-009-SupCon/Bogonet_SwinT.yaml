@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-PR
-exp_name: Bogonet-SwinT-B-003-orgbatch-Triplet
+exp_name: Bogonet-SwinT-B-009-SupCon
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train/
@@ -34,8 +34,10 @@ update_freq: 1
 log_freq: 100
 eval_freq: 5
 target_danger_precision: 0.90
-use_triplet: True
+use_triplet: False
 lambda_triplet: 0.2
 triplet_margin: 0.3
-triplet_warmup_epochs: 0
-class_weights: ~
+use_supcon: True
+lambda_supcon: 0.1
+supcon_temperature: 0.07
+train_stage: stage1

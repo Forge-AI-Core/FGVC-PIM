@@ -1,0 +1,35 @@
+[Evaluation Results]
+Project: Bogonet-SwinT-PR, Experiment: Bogonet-SwinT-B-009-SupCon
+Samples: 3369
+
+    layer1-top-1 81.478%
+    layer1-top-3 100.0%
+    layer2-top-1 81.686%
+    layer2-top-3 100.0%
+    layer3-top-1 81.745%
+    layer3-top-3 100.0%
+    layer4-top-1 81.745%
+    layer4-top-3 100.0%
+    combiner-top-1 81.686%
+    combiner-top-3 100.0%
+    danger_PR_AUC 83.087%
+    danger_AP 83.098%
+
+[Overall Performance]
+    Precision: 81.981%
+    Recall: 77.244%
+    F1-Score: 79.192%
+
+[Per-Class Performance (Combiner)]
+  - Class 'cut':
+    ACC: 90.176% | Precision: 82.439% | Recall: 90.176% | F1-Score: 86.134%
+  - Class 'danger':
+    ACC: 74.184% | Precision: 78.425% | Recall: 74.184% | F1-Score: 76.245%
+  - Class 'excluded':
+    ACC: 67.372% | Precision: 85.078% | Recall: 67.372% | F1-Score: 75.197%
+
+[Danger Class Target Precision >= 90%]
+    Recommended Threshold: 0.9999
+    Recall at this Threshold: 46.02%
+
+BEST_ACC: layer4-top-1 81.745% 
