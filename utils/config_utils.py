@@ -72,9 +72,10 @@ def get_args(with_deepspeed: bool=False):
 
     parser.add_argument("--use_wandb", default=True, type=bool)
     parser.add_argument("--target_danger_precision", default=0.90, type=float)
-    parser.add_argument("--use_triplet", default=False, type=bool)
-    parser.add_argument("--lambda_triplet", default=1.0, type=float)
-    parser.add_argument("--triplet_margin", default=0.3, type=float)
+    parser.add_argument("--use_cosface", default=False, type=bool)
+    parser.add_argument("--cosface_s", default=30.0, type=float)
+    parser.add_argument("--cosface_m", default=0.35, type=float)
+    parser.add_argument("--test_threshold", default=None, type=float)
     parser.add_argument("--triplet_warmup_epochs", default=0, type=int)
     parser.add_argument("--class_weights", default=None, type=float, nargs='+')
 

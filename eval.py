@@ -252,58 +252,67 @@ def evaluate(args, model, test_loader, plot_pr_curve: bool = False):
                     best_top1 = acc
                     best_top1_name = name
 
-        """ calculate Precision / Recall / F1 (combiner 기준) """
-        if len(all_preds) > 0:
+        # Apply fixed test threshold if provided
+        orig_preds = list(all_preds)
+        try:
+            dataset_root = test_loader.dataset.root
+            class_names = [f for f in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, f))]
+            class_names.sort()
+        except Exception:
+            class_names = [f"class_{i}" for i in range(3)]
+
+        danger_idx = -1
+        for idx, name in enumerate(class_names):
+            if name.lower() == "danger" or "danger" in name.lower():
+                danger_idx = idx
+                break
+
+        def compute_metrics(preds):
+            if len(preds) == 0:
+                return {}
             prec, rec, f1, _ = precision_recall_fscore_support(
-                all_labels, all_preds, average='macro', zero_division=0)
-            eval_acces["Precision"] = round(prec * 100, 3)
-            eval_acces["Recall"] = round(rec * 100, 3)
-            eval_acces["F1-Score"] = round(f1 * 100, 3)
-
-            # Per-class metrics
-            cm = confusion_matrix(all_labels, all_preds)
+                all_labels, preds, average='macro', zero_division=0)
+            res = {
+                "Precision": round(prec * 100, 3),
+                "Recall": round(rec * 100, 3),
+                "F1-Score": round(f1 * 100, 3)
+            }
+            cm = confusion_matrix(all_labels, preds)
             class_precs, class_recs, class_f1s, _ = precision_recall_fscore_support(
-                all_labels, all_preds, average=None, zero_division=0)
-
-            try:
-                dataset_root = test_loader.dataset.root
-                class_names = [f for f in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, f))]
-                class_names.sort()
-            except Exception:
-                class_names = [f"class_{i}" for i in range(len(class_precs))]
-
+                all_labels, preds, average=None, zero_division=0)
             for i, name in enumerate(class_names):
                 if i < len(class_precs):
                     row_sum = cm[i].sum()
                     class_acc = cm[i][i] / row_sum if row_sum > 0 else 0.0
-                    eval_acces[f"class_{name}_ACC"] = round(class_acc * 100, 3)
-                    eval_acces[f"class_{name}_Precision"] = round(class_precs[i] * 100, 3)
-                    eval_acces[f"class_{name}_Recall"] = round(class_recs[i] * 100, 3)
-                    eval_acces[f"class_{name}_F1-Score"] = round(class_f1s[i] * 100, 3)
+                    res[f"class_{name}_ACC"] = round(class_acc * 100, 3)
+                    res[f"class_{name}_Precision"] = round(class_precs[i] * 100, 3)
+                    res[f"class_{name}_Recall"] = round(class_recs[i] * 100, 3)
+                    res[f"class_{name}_F1-Score"] = round(class_f1s[i] * 100, 3)
+            return res
 
-            # Calculate Danger class PR AUC and the threshold for 90% precision
-            danger_idx = -1
-            for idx, name in enumerate(class_names):
-                if name.lower() == "danger":
-                    danger_idx = idx
-                    break
+        # 1. Original Argmax Metrics
+        orig_metrics = compute_metrics(orig_preds)
+        for k, v in orig_metrics.items():
+            eval_acces[f"orig_{k}"] = v
+
+        # 2. Optimal Threshold Recommendation (test_threshold가 없을 때만 시뮬레이션 및 추천 진행)
+        danger_pr_auc = 0.0
+        danger_ap = 0.0
+        opt_threshold = None
+        opt_recall = 0.0
+
+        if danger_idx != -1 and len(all_scores) > 0:
+            y_true = [1 if label == danger_idx else 0 for label in all_labels]
+            y_scores = [score[danger_idx] for score in all_scores]
             
-            if danger_idx == -1 and len(class_names) > 0:
-                for idx, name in enumerate(class_names):
-                    if "danger" in name.lower():
-                        danger_idx = idx
-                        break
-
-            if danger_idx != -1 and len(all_scores) > 0:
-                y_true = [1 if label == danger_idx else 0 for label in all_labels]
-                y_scores = [score[danger_idx] for score in all_scores]
+            if sum(y_true) > 0 and sum(y_true) < len(y_true):
+                precision_vals, recall_vals, thresholds = precision_recall_curve(y_true, y_scores)
+                danger_pr_auc = auc(recall_vals, precision_vals)
+                danger_ap = average_precision_score(y_true, y_scores)
                 
-                if sum(y_true) > 0 and sum(y_true) < len(y_true):
-                    precision_vals, recall_vals, thresholds = precision_recall_curve(y_true, y_scores)
-                    danger_pr_auc = auc(recall_vals, precision_vals)
-                    danger_ap = average_precision_score(y_true, y_scores)
-                    
-                    # Find threshold for >= target_precision % Precision with maximum Recall
+                # test_threshold가 없을 때만 최적 임계값 추천 및 PR Curve 그리기 진행
+                test_threshold = getattr(args, "test_threshold", None)
+                if test_threshold is None:
                     target_precision = getattr(args, "target_danger_precision", 0.90)
                     pct = int(round(target_precision * 100))
                     valid_indices = [i for i, p in enumerate(precision_vals[:-1]) if p >= target_precision]
@@ -333,12 +342,54 @@ def evaluate(args, model, test_loader, plot_pr_curve: bool = False):
                         plt.tight_layout()
                         plt.savefig(args.save_dir + "eval_best_danger_pr_curve.png", dpi=150)
                         plt.close()
+            else:
+                danger_pr_auc = 0.0
+                danger_ap = 0.0
+            
+            eval_acces["danger_PR_AUC"] = round(danger_pr_auc * 100, 3)
+            eval_acces["danger_AP"] = round(danger_ap * 100, 3)
+
+        # 3. Simulate Optimal Threshold Metrics (test_threshold가 없을 때만 계산)
+        if opt_threshold is not None and danger_idx != -1:
+            opt_preds = []
+            for bi, score in enumerate(all_scores):
+                if score[danger_idx] >= opt_threshold:
+                    opt_preds.append(danger_idx)
                 else:
-                    danger_pr_auc = 0.0
-                    danger_ap = 0.0
-                
-                eval_acces["danger_PR_AUC"] = round(danger_pr_auc * 100, 3)
-                eval_acces["danger_AP"] = round(danger_ap * 100, 3)
+                    orig_pred = orig_preds[bi]
+                    if orig_pred == danger_idx:
+                        temp_scores = list(score)
+                        temp_scores[danger_idx] = -1e9
+                        opt_preds.append(int(np.argmax(temp_scores)))
+                    else:
+                        opt_preds.append(orig_pred)
+            opt_metrics = compute_metrics(opt_preds)
+            for k, v in opt_metrics.items():
+                eval_acces[f"opt_{k}"] = v
+
+        # 4. Fixed Threshold Metrics
+        test_threshold = getattr(args, "test_threshold", None)
+        if test_threshold is not None and danger_idx != -1:
+            fixed_preds = []
+            for bi, score in enumerate(all_scores):
+                if score[danger_idx] >= test_threshold:
+                    fixed_preds.append(danger_idx)
+                else:
+                    orig_pred = orig_preds[bi]
+                    if orig_pred == danger_idx:
+                        temp_scores = list(score)
+                        temp_scores[danger_idx] = -1e9
+                        fixed_preds.append(int(np.argmax(temp_scores)))
+                    else:
+                        fixed_preds.append(orig_pred)
+            fixed_metrics = compute_metrics(fixed_preds)
+            for k, v in fixed_metrics.items():
+                eval_acces[f"fixed_{k}"] = v
+            for k, v in fixed_metrics.items():
+                eval_acces[k] = v
+        else:
+            for k, v in orig_metrics.items():
+                eval_acces[k] = v
 
     return best_top1, best_top1_name, eval_acces
 
@@ -465,52 +516,108 @@ def eval_and_save(args, model, val_loader, tlogger):
         tlogger.print("    Recommended Threshold: {}".format(eval_acces[thresh_key]))
         tlogger.print("    Recall at this Threshold: {}%".format(eval_acces.get(recall_key, 0.0)))
     
-    ### build records.txt
-    msg = "[Evaluation Results]\n"
-    msg += "Project: {}, Experiment: {}\n".format(args.project_name, args.exp_name)
-    msg += "Samples: {}\n".format(len(val_loader.dataset))
-    msg += "\n"
+    test_threshold = getattr(args, "test_threshold", None)
     
-    # 1. 일반 레이어 성능 출력
-    for name in eval_acces:
-        if not name.startswith("class_") and name not in ["Precision", "Recall", "F1-Score", thresh_key, recall_key]:
-            msg += "    {} {}%\n".format(name, eval_acces[name])
-    msg += "\n"
-    
-    # 2. 글로벌 결합 성능 요약
-    msg += "[Overall Performance]\n"
-    msg += "    Precision: {}%\n".format(eval_acces.get("Precision", 0))
-    msg += "    Recall: {}%\n".format(eval_acces.get("Recall", 0))
-    msg += "    F1-Score: {}%\n".format(eval_acces.get("F1-Score", 0))
-    msg += "\n"
-    
-    # 3. 클래스별 성능 요약
-    class_keys = sorted([k for k in eval_acces.keys() if k.startswith("class_")])
-    if len(class_keys) > 0:
-        msg += "[Per-Class Performance (Combiner)]\n"
-        classes_data = {}
-        for k in class_keys:
-            parts = k.split("_")
-            metric = parts[-1]
-            cname = "_".join(parts[1:-1])
-            if cname not in classes_data:
-                classes_data[cname] = {}
-            classes_data[cname][metric] = eval_acces[k]
-            
-        for cname, metrics in classes_data.items():
-            msg += "  - Class '{}':\n".format(cname)
-            msg += "    ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%\n".format(
-                metrics.get("ACC", 0), metrics.get("Precision", 0), metrics.get("Recall", 0), metrics.get("F1-Score", 0)
-            )
-        msg += "\n"
-    
-    if thresh_key in eval_acces:
-        msg += f"[Danger Class Target Precision >= {pct}%]\n"
-        msg += "    Recommended Threshold: {}\n".format(eval_acces[thresh_key])
-        msg += "    Recall at this Threshold: {}%\n".format(eval_acces.get(recall_key, 0.0))
+    if test_threshold is not None:
+        ### 1. 테스트셋 모드: 3중 비교식 분석 포맷 (L1-L60)
+        msg = "[Evaluation Results]\n"
+        msg += "Project: {}, Experiment: {}\n".format(args.project_name, args.exp_name)
+        msg += "Samples: {}\n".format(len(val_loader.dataset))
         msg += "\n"
         
-    msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
+        for name in eval_acces:
+            if not (name.startswith("orig_") or name.startswith("fixed_") or name.startswith("opt_") or name.startswith("class_") or name in ["Precision", "Recall", "F1-Score", thresh_key, recall_key, "danger_PR_AUC", "danger_AP"]):
+                msg += "    {} {}%\n".format(name, eval_acces[name])
+        if "danger_PR_AUC" in eval_acces:
+            msg += "    danger_PR_AUC {}%\n".format(eval_acces["danger_PR_AUC"])
+            msg += "    danger_AP {}%\n".format(eval_acces["danger_AP"])
+        msg += "\n"
+        
+        # A. Original Argmax
+        msg += "==================================================\n"
+        msg += "[1. Original Argmax Performance]\n"
+        msg += "==================================================\n"
+        msg += "  * Overall Performance:\n"
+        msg += "    Precision: {}%\n".format(eval_acces.get("orig_Precision", 0))
+        msg += "    Recall: {}%\n".format(eval_acces.get("orig_Recall", 0))
+        msg += "    F1-Score: {}%\n".format(eval_acces.get("orig_F1-Score", 0))
+        msg += "\n"
+        msg += "  * Per-Class Performance:\n"
+        class_names = sorted(list(set([k[11:].rsplit("_", 1)[0] for k in eval_acces.keys() if k.startswith("orig_class_")])))
+        for cname in class_names:
+            msg += "    - Class '{}': ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%\n".format(
+                cname,
+                eval_acces.get(f"orig_class_{cname}_ACC", 0),
+                eval_acces.get(f"orig_class_{cname}_Precision", 0),
+                eval_acces.get(f"orig_class_{cname}_Recall", 0),
+                eval_acces.get(f"orig_class_{cname}_F1-Score", 0)
+            )
+        msg += "\n"
+        
+        # B. Fixed Threshold
+        if "fixed_Precision" in eval_acces:
+            msg += "==================================================\n"
+            msg += f"[2. Applied Fixed Threshold ({test_threshold}) Performance]\n"
+            msg += "==================================================\n"
+            msg += "  * Overall Performance:\n"
+            msg += "    Precision: {}%\n".format(eval_acces.get("fixed_Precision", 0))
+            msg += "    Recall: {}%\n".format(eval_acces.get("fixed_Recall", 0))
+            msg += "    F1-Score: {}%\n".format(eval_acces.get("fixed_F1-Score", 0))
+            msg += "\n"
+            msg += "  * Per-Class Performance:\n"
+            for cname in class_names:
+                msg += "    - Class '{}': ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%\n".format(
+                    cname,
+                    eval_acces.get(f"fixed_class_{cname}_ACC", 0),
+                    eval_acces.get(f"fixed_class_{cname}_Precision", 0),
+                    eval_acces.get(f"fixed_class_{cname}_Recall", 0),
+                    eval_acces.get(f"fixed_class_{cname}_F1-Score", 0)
+                )
+            msg += "\n"
+            
+        msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
+        
+    else:
+        ### 2. 일반 검증 모드: 기존 단일 성능 포맷 (L1-L35)
+        msg = "[Evaluation Results]\n"
+        msg += "Project: {}, Experiment: {}\n".format(args.project_name, args.exp_name)
+        msg += "Samples: {}\n".format(len(val_loader.dataset))
+        msg += "\n"
+        
+        for name in eval_acces:
+            if not (name.startswith("orig_") or name.startswith("fixed_") or name.startswith("opt_") or name.startswith("class_") or name in ["Precision", "Recall", "F1-Score", thresh_key, recall_key, "danger_PR_AUC", "danger_AP"]):
+                msg += "    {} {}%\n".format(name, eval_acces[name])
+        if "danger_PR_AUC" in eval_acces:
+            msg += "    danger_PR_AUC {}%\n".format(eval_acces["danger_PR_AUC"])
+            msg += "    danger_AP {}%\n".format(eval_acces["danger_AP"])
+        msg += "\n"
+        
+        msg += "[Overall Performance]\n"
+        msg += "    Precision: {}%\n".format(eval_acces.get("orig_Precision", 0))
+        msg += "    Recall: {}%\n".format(eval_acces.get("orig_Recall", 0))
+        msg += "    F1-Score: {}%\n".format(eval_acces.get("orig_F1-Score", 0))
+        msg += "\n"
+        
+        class_names = sorted(list(set([k[11:].rsplit("_", 1)[0] for k in eval_acces.keys() if k.startswith("orig_class_")])))
+        if len(class_names) > 0:
+            msg += "[Per-Class Performance (Combiner)]\n"
+            for cname in class_names:
+                msg += "  - Class '{}':\n".format(cname)
+                msg += "    ACC: {}% | Precision: {}% | Recall: {}% | F1-Score: {}%\n".format(
+                    eval_acces.get(f"orig_class_{cname}_ACC", 0),
+                    eval_acces.get(f"orig_class_{cname}_Precision", 0),
+                    eval_acces.get(f"orig_class_{cname}_Recall", 0),
+                    eval_acces.get(f"orig_class_{cname}_F1-Score", 0)
+                )
+            msg += "\n"
+        
+        if thresh_key in eval_acces:
+            msg += f"[Danger Class Target Precision >= {pct}%]\n"
+            msg += "    Recommended Threshold: {}\n".format(eval_acces[thresh_key])
+            msg += "    Recall at this Threshold: {}%\n".format(eval_acces.get(recall_key, 0.0))
+            msg += "\n"
+            
+        msg += "BEST_ACC: {} {}% ".format(eval_name, acc)
 
     with open(args.save_dir + "eval_results.txt", "w") as ftxt:
         ftxt.write(msg)
