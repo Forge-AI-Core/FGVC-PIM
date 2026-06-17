@@ -1,5 +1,5 @@
 project_name: Bogonet-SwinT-PR
-exp_name: Bogonet-SwinT-B-003-orgbatch-Triplet
+exp_name: Bogonet-SwinT-B-003-orgbatch-Triplet-0pct
 use_wandb: False
 wandb_entity: account
 train_root: ./classification_split/crops_25pct_split/train/
